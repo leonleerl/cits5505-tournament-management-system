@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Basketball Tournament Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./css/index.css">
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -45,8 +45,8 @@
             <h1 class="display-3 mb-3">Basketball Tournament Management</h1>
             <p class="lead">Follow the latest tournaments, matches and player statistics</p>
             <div class="mt-4">
-                <button class="btn btn-light btn-lg me-2">View Leaderboard</button>
-                <button class="btn btn-outline-light btn-lg">Upcoming Matches</button>
+                <button onclick="scrollToSection('leaderboard')"  class="btn btn-light btn-lg me-2">View Leaderboard</button>
+                <button onclick="scrollToSection('upcoming')"  class="btn btn-outline-light btn-lg">Upcoming Matches</button>
             </div>
         </div>
     </header>
@@ -148,6 +148,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="./index.js"></script>
+    <script src="./js/index.js"></script>
+    <script src="./js/leaderboard.js"></script>
 </body>
 </html> 
