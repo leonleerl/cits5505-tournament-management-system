@@ -9,7 +9,6 @@ let scores = [];
 document.addEventListener("DOMContentLoaded", function () {
   loadData();
 
-  // Season filter change handler
   const seasonSelect = document.getElementById("season-select");
   if (seasonSelect) {
     seasonSelect.addEventListener("change", function () {
@@ -18,17 +17,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Load data from db.json
 function loadData() {
-  fetch("../db.json")
+  fetch("./db.json")
     .then((response) => {
       if (!response.ok) {
-        throw new Error("Network response was not ok: " + response.statusText);
+        throw new Error("Network response error: " + response.statusText);
       }
       return response.json();
     })
     .then((data) => {
-      // Store data in variables
       teams = data.teams;
       players = data.players;
       users = data.users;
@@ -37,7 +34,6 @@ function loadData() {
       matches = data.matches;
       scores = data.scores;
 
-      // Initialize the leaderboard after data is loaded
       initLeaderboard();
     })
     .catch((error) => {
@@ -80,5 +76,23 @@ function initLeaderboard(seasonFilter = "all") {
       `;
 
     leaderboardBody.appendChild(row);
+  });
+
+  animateLeaderboard();
+}
+
+// Animation for the leaderboard
+function animateLeaderboard() {
+  const rows = document.querySelectorAll("#leaderboard-body tr");
+
+  rows.forEach((row, index) => {
+    row.style.opacity = "0";
+    row.style.transform = "translateY(20px)";
+    row.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+
+    setTimeout(() => {
+      row.style.opacity = "1";
+      row.style.transform = "translateY(0)";
+    }, 100 * index);
   });
 }
