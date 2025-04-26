@@ -1,0 +1,60 @@
+/* Main Theme Colors */
+:root {
+    --primary-color: #FF8C00;
+    --primary-dark: #E07800;
+    --primary-light: #FFB74D;
+    --secondary-color: #212529; 
+    --accent-color: #FF5722; 
+    --text-color: #212529;
+    --light-color: #f8f9fa;
+    --gray-color: #6c757d;
+}
+
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+.text-primary {
+    color: var(--primary-color) !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+
+.list-group-item.active {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Leaderboard Styles */
+.table th {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-dark);
+} 
