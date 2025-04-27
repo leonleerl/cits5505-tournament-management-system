@@ -47,6 +47,37 @@
     border-color: var(--primary-color) !important;
 }
 
+/* form-control and form-select focus and checked colours */
+.form-control:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
+}
+.form-select:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
+}
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
+}
+
+/* nav-tab colours */
+.nav-tabs .nav-link {
+    color: var(--text-color);
+    border: 1px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-color: #dee2e6 #dee2e6 #fff;
+    font-weight: 500;
+}
+
 /* Hero Section */
 .hero-section {
     background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
@@ -144,4 +175,3 @@
 .detail-btn:hover {
     transform: translateY(-2px);
 }
-
