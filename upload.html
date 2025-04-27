@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data - Basketball Tournament Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                Basketball Tournament
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#matches">Matches</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#players">Players</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html#stadiums">Stadiums</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="login.html">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Upload Data Section -->
+    <section class="py-5">
+        <div class="container">
+            <h1 class="mb-4">Upload Tournament Data</h1>
+            
+            <!-- Data Upload Tabs -->
+            <ul class="nav nav-tabs mb-4" id="uploadTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tournament-tab" data-bs-toggle="tab" data-bs-target="#tournament" type="button" role="tab">Tournament</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="team-tab" data-bs-toggle="tab" data-bs-target="#team" type="button" role="tab">Team</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="player-tab" data-bs-toggle="tab" data-bs-target="#player" type="button" role="tab">Player</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="match-tab" data-bs-toggle="tab" data-bs-target="#match" type="button" role="tab">Match Results</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">Batch Upload</button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="uploadTabsContent">
+                <!-- Tournament Form -->
+                <div class="tab-pane fade show active" id="tournament" role="tabpanel">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Create New Tournament</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="tournamentForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="tournamentName" class="form-label">Tournament Name</label>
+                                        <input type="text" class="form-control" id="tournamentName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="tournamentYear" class="form-label">Year</label>
+                                        <input type="number" class="form-control" id="tournamentYear" min="2023" max="2030" value="2023" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="tournamentDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="tournamentDescription" rows="3"></textarea>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="startDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="endDate" required>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Create Tournament</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Form -->
+                <div class="tab-pane fade" id="team" role="tabpanel">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Register New Team</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="teamForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="teamName" class="form-label">Team Name</label>
+                                        <input type="text" class="form-control" id="teamName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="createdYear" class="form-label">Established Year</label>
+                                        <input type="number" class="form-control" id="createdYear" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="teamDescription" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamLogo" class="form-label">Team Logo</label>
+                                    <input type="file" class="form-control" id="teamLogo" accept="image/*">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="teamColor" class="form-label">Team Color</label>
+                                    <input type="color" class="form-control form-control-color" id="teamColor" value="#FF8C00">
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Register Team</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Player Form -->
+                <div class="tab-pane fade" id="player" role="tabpanel">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Add New Player</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="playerForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="playerName" class="form-label">Player Name</label>
+                                        <input type="text" class="form-control" id="playerName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="playerTeam" class="form-label">Team</label>
+                                        <select class="form-select" id="playerTeam" required>
+                                            <option value="" selected disabled>Select a team</option>
+                                            <option value="1">Lakers</option>
+                                            <option value="2">Bulls</option>
+                                            <option value="3">Celtics</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="playerHeight" class="form-label">Height (cm)</label>
+                                        <input type="number" class="form-control" id="playerHeight" min="150" max="250" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="playerWeight" class="form-label">Weight (kg)</label>
+                                        <input type="number" class="form-control" id="playerWeight" min="50" max="150" required>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="playerPosition" class="form-label">Position</label>
+                                        <select class="form-select" id="playerPosition" required>
+                                            <option value="" selected disabled>Select position</option>
+                                            <option value="PG">Point Guard (PG)</option>
+                                            <option value="SG">Shooting Guard (SG)</option>
+                                            <option value="SF">Small Forward (SF)</option>
+                                            <option value="PF">Power Forward (PF)</option>
+                                            <option value="C">Center (C)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="jerseyNumber" class="form-label">Jersey Number</label>
+                                        <input type="number" class="form-control" id="jerseyNumber" min="0" max="99" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="playerPhoto" class="form-label">Player Photo</label>
+                                    <input type="file" class="form-control" id="playerPhoto" accept="image/*">
+                                </div>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Add Player</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Match Results Form -->
+                <div class="tab-pane fade" id="match" role="tabpanel">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Record Match Results</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="matchForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="matchDate" class="form-label">Match Date</label>
+                                        <input type="datetime-local" class="form-control" id="matchDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="stadiumSelect" class="form-label">Stadium</label>
+                                        <select class="form-select" id="stadiumSelect" required>
+                                            <option value="" selected disabled>Select a stadium</option>
+                                            <option value="1">Madison Square Garden</option>
+                                            <option value="2">Staples Center</option>
+                                            <option value="3">United Center</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row align-items-center mb-4">
+                                    <div class="col-md-5">
+                                        <label for="team1Select" class="form-label">Home Team</label>
+                                        <select class="form-select" id="team1Select" required>
+                                            <option value="" selected disabled>Select home team</option>
+                                            <option value="1">Lakers</option>
+                                            <option value="2">Bulls</option>
+                                            <option value="3">Celtics</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 text-center my-2">
+                                        <span class="h4">VS</span>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="team2Select" class="form-label">Away Team</label>
+                                        <select class="form-select" id="team2Select" required>
+                                            <option value="" selected disabled>Select away team</option>
+                                            <option value="1">Lakers</option>
+                                            <option value="2">Bulls</option>
+                                            <option value="3">Celtics</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="team1Score" class="form-label">Home Team Score</label>
+                                        <input type="number" class="form-control" id="team1Score" min="0" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="team2Score" class="form-label">Away Team Score</label>
+                                        <input type="number" class="form-control" id="team2Score" min="0" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="matchNotes" class="form-label">Match Notes</label>
+                                    <textarea class="form-control" id="matchNotes" rows="3"></textarea>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save Results</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Batch Upload Form -->
+                <div class="tab-pane fade" id="batch" role="tabpanel">
+                    <div class="card shadow">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="mb-0">Batch Upload Data</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> Upload CSV files with tournament data. Make sure your files follow the required format.
+                            </div>
+                            
+                            <form id="batchUploadForm">
+                                <div class="mb-3">
+                                    <label for="dataType" class="form-label">Data Type</label>
+                                    <select class="form-select" id="dataType" required>
+                                        <option value="" selected disabled>Select data type</option>
+                                        <option value="teams">Teams</option>
+                                        <option value="players">Players</option>
+                                        <option value="matches">Matches</option>
+                                        <option value="scores">Scores</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="csvFile" class="form-label">CSV File</label>
+                                    <input type="file" class="form-control" id="csvFile" accept=".csv" required>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="headerCheck" checked>
+                                        <label class="form-check-label" for="headerCheck">
+                                            File contains header row
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">CSV Templates</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <a href="#" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-download me-1"></i> Teams Template
+                                        </a>
+                                        <a href="#" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-download me-1"></i> Players Template
+                                        </a>
+                                        <a href="#" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-download me-1"></i> Matches Template
+                                        </a>
+                                        <a href="#" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-download me-1"></i> Scores Template
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-end mt-3">
+                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Upload File</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Basketball Tournament Management System</h5>
+                    <p>An interactive platform for managing basketball tournaments and tracking player statistics.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="index.html" class="text-white">Home</a></li>
+                        <li><a href="index.html#matches" class="text-white">Matches</a></li>
+                        <li><a href="index.html#players" class="text-white">Players</a></li>
+                        <li><a href="dashboard.html" class="text-white">Dashboard</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i> Agile Web Development Master Group 9</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; 2025 Basketball Tournament Management System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/index.js"></script>
+</body>
+</html>
