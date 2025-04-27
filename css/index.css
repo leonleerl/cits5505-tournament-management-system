@@ -78,6 +78,26 @@
     font-weight: 500;
 }
 
+/* Nav Pills Styling */
+.nav-pills .nav-link {
+    color: var(--text-color);
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link.active, 
+.nav-pills .show > .nav-link {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+    background-color: rgba(255, 140, 0, 0.1);
+    color: var(--text-color);
+}
+
+
 /* Hero Section */
 .hero-section {
     background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
