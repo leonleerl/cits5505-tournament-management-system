@@ -1,0 +1,125 @@
+/* Form validation styles */
+.form-control:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
+}
+
+.form-control.is-valid:focus,
+.was-validated .form-control:valid:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+}
+
+.form-control.is-invalid:focus,
+.was-validated .form-control:invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+/* Upload form styles */
+.nav-tabs .nav-link {
+    color: var(--text-color);
+    border: 1px solid transparent;
+    transition: color 0.3s, border-color 0.3s;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-color: #dee2e6 #dee2e6 #fff;
+    font-weight: 500;
+}
+
+.tab-content {
+    padding-top: 1rem;
+}
+
+/* Password strength indicator */
+.password-strength {
+    height: 5px;
+    margin-top: 5px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.password-strength-weak {
+    background-color: #dc3545;
+    width: 30%;
+}
+
+.password-strength-medium {
+    background-color: #ffc107;
+    width: 60%;
+}
+
+.password-strength-strong {
+    background-color: #198754;
+    width: 100%;
+}
+
+/* Preview containers */
+#avatar-preview-container,
+#team-logo-preview,
+#player-photo-preview {
+    margin-top: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Form cards hover effect */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Form submit buttons */
+.btn-primary {
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Notification animation */
+.alert {
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Checkbox styling */
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .match-score-display {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .vs-text {
+        margin: 10px 0;
+    }
+}
