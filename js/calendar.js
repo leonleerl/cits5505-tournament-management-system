@@ -21,7 +21,7 @@ function loadCalendarData() {
       calendarStadiums = data.stadiums;
       calendarScores = data.scores;
 
-      console.log("Calendar: 成功加载数据", {
+      console.log("Calendar: ", {
         matches: calendarMatchData.length,
         teams: calendarTeams.length,
       });
