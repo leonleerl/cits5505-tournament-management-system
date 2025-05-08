@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Fantasy Basketball{% endblock %}
+
+{% block content %}
+<!-- Login Form Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5 p-4 login-border border">
+                <div class="text-center mb-4">
+                    <h2>Login to Your Account</h2>
+                </div>
+                <form id="loginForm">
+                    <!-- Preserving the original form without action attribute for JS handling -->
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="username" placeholder="Username" required>
+                        <label for="username">Username</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="password" placeholder="Password" required>
+                        <label for="password">Password</label>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="{{ url_for('main.index') }}" class="text-primary small">Forget password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+                    <p class="small text-center">Need an account? <a href="{{ url_for('main.signup') }}" class="text-primary">Sign up!</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
