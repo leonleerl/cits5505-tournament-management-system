@@ -66,7 +66,24 @@ def create_seed_data():
         date_joined=datetime.utcnow()
     )
     
-    db.session.add_all([admin, user1, user2])
+    # Add more users
+    user3 = User(
+        full_name="Michael Johnson",
+        username="michaelj",
+        email="michael@example.com",
+        password_hash=generate_password_hash("password123"),
+        date_joined=datetime.utcnow() - timedelta(days=30)
+    )
+    
+    user4 = User(
+        full_name="Sarah Williams",
+        username="sarahw",
+        email="sarah@example.com",
+        password_hash=generate_password_hash("password123"),
+        date_joined=datetime.utcnow() - timedelta(days=15)
+    )
+    
+    db.session.add_all([admin, user1, user2, user3, user4])
     db.session.commit()
     
     # Create tournaments
@@ -90,7 +107,44 @@ def create_seed_data():
         creator_id=user1.id
     )
     
-    db.session.add_all([tournament1, tournament2])
+    # Add more tournaments
+    tournament3 = Tournament(
+        name="City Cup",
+        description="Local tournament for city teams with different age divisions.",
+        year=current_year,
+        start_date=datetime(current_year, 7, 10).date(),
+        end_date=datetime(current_year, 8, 15).date(),
+        creator_id=user2.id
+    )
+    
+    tournament4 = Tournament(
+        name="Winter Classic",
+        description="Indoor winter basketball tournament with professional and amateur teams.",
+        year=current_year,
+        start_date=datetime(current_year, 11, 1).date(),
+        end_date=datetime(current_year, 12, 15).date(),
+        creator_id=admin.id
+    )
+    
+    tournament5 = Tournament(
+        name="Youth Development League",
+        description="Tournament aimed at developing young basketball talent under 18.",
+        year=current_year,
+        start_date=datetime(current_year, 4, 5).date(),
+        end_date=datetime(current_year, 6, 20).date(),
+        creator_id=user3.id
+    )
+    
+    tournament6 = Tournament(
+        name="Corporate Challenge",
+        description="Basketball tournament between corporate teams for charity.",
+        year=current_year,
+        start_date=datetime(current_year, 9, 10).date(),
+        end_date=datetime(current_year, 10, 25).date(),
+        creator_id=user4.id
+    )
+    
+    db.session.add_all([tournament1, tournament2, tournament3, tournament4, tournament5, tournament6])
     db.session.commit()
     
     # Grant access to tournaments
@@ -106,7 +160,32 @@ def create_seed_data():
         access_granted=datetime.utcnow()
     )
     
-    db.session.add_all([access1, access2])
+    # Add more tournament access grants
+    access3 = TournamentAccess(
+        tournament_id=tournament3.id,
+        user_id=user3.id,
+        access_granted=datetime.utcnow() - timedelta(days=5)
+    )
+    
+    access4 = TournamentAccess(
+        tournament_id=tournament4.id,
+        user_id=user4.id,
+        access_granted=datetime.utcnow() - timedelta(days=2)
+    )
+    
+    access5 = TournamentAccess(
+        tournament_id=tournament1.id,
+        user_id=user4.id,
+        access_granted=datetime.utcnow() - timedelta(days=10)
+    )
+    
+    access6 = TournamentAccess(
+        tournament_id=tournament5.id,
+        user_id=user1.id,
+        access_granted=datetime.utcnow() - timedelta(days=3)
+    )
+    
+    db.session.add_all([access1, access2, access3, access4, access5, access6])
     db.session.commit()
     
     # Create teams for tournament 1
@@ -163,7 +242,117 @@ def create_seed_data():
         tournament_id=tournament2.id
     )
     
-    db.session.add_all([team1, team2, team3, team4])
+    # Add more teams to tournament 1
+    team5 = Team(
+        name="Blue Sharks",
+        created_year=2013,
+        logo_shape_type=1,
+        primary_color="#0099ff",
+        secondary_color="#000000",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=admin.id,
+        tournament_id=tournament1.id
+    )
+    
+    team6 = Team(
+        name="Green Giants",
+        created_year=2011,
+        logo_shape_type=3,
+        primary_color="#33cc33",
+        secondary_color="#ffffff",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=admin.id,
+        tournament_id=tournament1.id
+    )
+    
+    # Add more teams to tournament 2
+    team7 = Team(
+        name="Murdoch Flames",
+        created_year=2014,
+        logo_shape_type=2,
+        primary_color="#ff6600",
+        secondary_color="#000000",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user1.id,
+        tournament_id=tournament2.id
+    )
+    
+    team8 = Team(
+        name="ECU Titans",
+        created_year=2016,
+        logo_shape_type=4,
+        primary_color="#660066",
+        secondary_color="#ffffff",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user1.id,
+        tournament_id=tournament2.id
+    )
+    
+    # Add teams to tournament 3
+    team9 = Team(
+        name="Northside Bulls",
+        created_year=2009,
+        logo_shape_type=1,
+        primary_color="#cc0000",
+        secondary_color="#000000",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user2.id,
+        tournament_id=tournament3.id
+    )
+    
+    team10 = Team(
+        name="Southside Wolves",
+        created_year=2010,
+        logo_shape_type=2,
+        primary_color="#666666",
+        secondary_color="#ffffff",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user2.id,
+        tournament_id=tournament3.id
+    )
+    
+    team11 = Team(
+        name="Eastside Ravens",
+        created_year=2011,
+        logo_shape_type=3,
+        primary_color="#000000",
+        secondary_color="#cccccc",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user2.id,
+        tournament_id=tournament3.id
+    )
+    
+    team12 = Team(
+        name="Westside Tigers",
+        created_year=2012,
+        logo_shape_type=4,
+        primary_color="#ff9900",
+        secondary_color="#000000",
+        wins=0,
+        losses=0,
+        points=0,
+        creator_id=user2.id,
+        tournament_id=tournament3.id
+    )
+    
+    db.session.add_all([
+        team1, team2, team3, team4, team5, team6,
+        team7, team8, team9, team10, team11, team12
+    ])
     db.session.commit()
     
     # Create players for team 1
@@ -247,7 +436,142 @@ def create_seed_data():
         creator_id=user1.id
     )
     
-    db.session.add_all([match1, match2, match3, match4])
+    # Additional past matches for tournament 1
+    match5 = Match(
+        tournament_id=tournament1.id,
+        team1_id=team1.id,
+        team2_id=team5.id,
+        venue_name="Riverside Court",
+        match_date=now - timedelta(days=12),
+        creator_id=admin.id
+    )
+    
+    match6 = Match(
+        tournament_id=tournament1.id,
+        team1_id=team6.id,
+        team2_id=team2.id,
+        venue_name="Central Stadium",
+        match_date=now - timedelta(days=9),
+        creator_id=admin.id
+    )
+    
+    match7 = Match(
+        tournament_id=tournament1.id,
+        team1_id=team5.id,
+        team2_id=team6.id,
+        venue_name="Riverside Court",
+        match_date=now - timedelta(days=7),
+        creator_id=admin.id
+    )
+    
+    # Additional past matches for tournament 2
+    match8 = Match(
+        tournament_id=tournament2.id,
+        team1_id=team3.id,
+        team2_id=team7.id,
+        venue_name="University Arena",
+        match_date=now - timedelta(days=10),
+        creator_id=user1.id
+    )
+    
+    match9 = Match(
+        tournament_id=tournament2.id,
+        team1_id=team8.id,
+        team2_id=team4.id,
+        venue_name="College Stadium",
+        match_date=now - timedelta(days=8),
+        creator_id=user1.id
+    )
+    
+    match10 = Match(
+        tournament_id=tournament2.id,
+        team1_id=team7.id,
+        team2_id=team8.id,
+        venue_name="University Arena",
+        match_date=now - timedelta(days=4),
+        creator_id=user1.id
+    )
+    
+    # Matches for tournament 3
+    match11 = Match(
+        tournament_id=tournament3.id,
+        team1_id=team9.id,
+        team2_id=team10.id,
+        venue_name="City Arena",
+        match_date=now - timedelta(days=6),
+        creator_id=user2.id
+    )
+    
+    match12 = Match(
+        tournament_id=tournament3.id,
+        team1_id=team11.id,
+        team2_id=team12.id,
+        venue_name="City Arena",
+        match_date=now - timedelta(days=3),
+        creator_id=user2.id
+    )
+    
+    # Additional upcoming matches
+    match13 = Match(
+        tournament_id=tournament1.id,
+        team1_id=team5.id,
+        team2_id=team1.id,
+        venue_name="Riverside Court",
+        match_date=now + timedelta(days=3),
+        creator_id=admin.id
+    )
+    
+    match14 = Match(
+        tournament_id=tournament1.id,
+        team1_id=team2.id,
+        team2_id=team6.id,
+        venue_name="Central Stadium",
+        match_date=now + timedelta(days=7),
+        creator_id=admin.id
+    )
+    
+    match15 = Match(
+        tournament_id=tournament2.id,
+        team1_id=team7.id,
+        team2_id=team3.id,
+        venue_name="College Stadium",
+        match_date=now + timedelta(days=8),
+        creator_id=user1.id
+    )
+    
+    match16 = Match(
+        tournament_id=tournament2.id,
+        team1_id=team4.id,
+        team2_id=team8.id,
+        venue_name="University Arena",
+        match_date=now + timedelta(days=12),
+        creator_id=user1.id
+    )
+    
+    match17 = Match(
+        tournament_id=tournament3.id,
+        team1_id=team9.id,
+        team2_id=team11.id,
+        venue_name="City Arena",
+        match_date=now + timedelta(days=4),
+        creator_id=user2.id
+    )
+    
+    match18 = Match(
+        tournament_id=tournament3.id,
+        team1_id=team10.id,
+        team2_id=team12.id,
+        venue_name="City Arena",
+        match_date=now + timedelta(days=6),
+        creator_id=user2.id
+    )
+    
+    matches = [
+        match1, match2, match3, match4, match5, match6, match7, match8, match9, match10,
+        match11, match12, match13, match14, match15, match16, match17, match18
+    ]
+    
+    db.session.add_all(matches)
     db.session.commit()
     
     # Add scores for completed matches
@@ -263,17 +587,114 @@ def create_seed_data():
         team2_score=88
     )
     
-    db.session.add_all([score1, score2])
+    # Add scores for additional completed matches
+    score5 = MatchScore(
+        match_id=match5.id,
+        team1_score=95,
+        team2_score=89
+    )
+    
+    score6 = MatchScore(
+        match_id=match6.id,
+        team1_score=82,
+        team2_score=90
+    )
+    
+    score7 = MatchScore(
+        match_id=match7.id,
+        team1_score=78,
+        team2_score=75
+    )
+    
+    score8 = MatchScore(
+        match_id=match8.id,
+        team1_score=102,
+        team2_score=98
+    )
+    
+    score9 = MatchScore(
+        match_id=match9.id,
+        team1_score=85,
+        team2_score=91
+    )
+    
+    score10 = MatchScore(
+        match_id=match10.id,
+        team1_score=88,
+        team2_score=76
+    )
+    
+    score11 = MatchScore(
+        match_id=match11.id,
+        team1_score=72,
+        team2_score=68
+    )
+    
+    score12 = MatchScore(
+        match_id=match12.id,
+        team1_score=79,
+        team2_score=84
+    )
+    
+    scores = [
+        score1, score2, score5, score6, score7, score8, 
+        score9, score10, score11, score12
+    ]
+    
+    db.session.add_all(scores)
     db.session.commit()
     
     # Update team records based on match results
-    team1.wins += 1
-    team1.points += 2
-    team2.losses += 1
+    # Tournament 1
+    team1.wins = 2  # Won matches 1 and 5
+    team1.losses = 0
+    team1.points = 4
     
-    team3.wins += 1
-    team3.points += 2
-    team4.losses += 1
+    team2.wins = 1  # Won match 6, lost matches 1
+    team2.losses = 2
+    team2.points = 2
+    
+    team5.wins = 1  # Won match 7, lost match 5
+    team5.losses = 1
+    team5.points = 2
+    
+    team6.wins = 1  # Won match 7, lost match 6
+    team6.losses = 1
+    team6.points = 2
+    
+    # Tournament 2
+    team3.wins = 2  # Won matches 2 and 8
+    team3.losses = 0
+    team3.points = 4
+    
+    team4.wins = 0  # Lost matches 2 and 9
+    team4.losses = 2
+    team4.points = 0
+    
+    team7.wins = 1  # Won match 10, lost match 8
+    team7.losses = 1
+    team7.points = 2
+    
+    team8.wins = 1  # Won match 9, lost match 10
+    team8.losses = 1
+    team8.points = 2
+    
+    # Tournament 3
+    team9.wins = 1  # Won match 11
+    team9.losses = 0
+    team9.points = 2
+    
+    team10.wins = 0  # Lost match 11
+    team10.losses = 1
+    team10.points = 0
+    
+    team11.wins = 0  # Lost match 12
+    team11.losses = 1
+    team11.points = 0
+    
+    team12.wins = 1  # Won match 12
+    team12.losses = 0
+    team12.points = 2
     
     db.session.commit()
     
