@@ -21,8 +21,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // Animate concept explanation
+  animateConceptExplanation();
+
   // Animate hero feature cards
   animateHeroFeatures();
+
+  // Animate core features and testimonials on scroll
+  animateOnScroll();
 
   // Apply animation to the leaderboard on page load
   animateLeaderboard();
@@ -58,6 +64,70 @@ document.addEventListener("DOMContentLoaded", function () {
   // Apply dynamic styling based on data attributes
   applyDynamicStyles();
 });
+
+// Function to animate concept explanation with a fade-in effect
+function animateConceptExplanation() {
+  const conceptExplanation = document.querySelector(".concept-explanation");
+  if (conceptExplanation) {
+    conceptExplanation.style.opacity = "0";
+    conceptExplanation.style.transform = "translateY(20px)";
+    conceptExplanation.style.transition =
+      "opacity 0.6s ease, transform 0.6s ease";
+
+    setTimeout(() => {
+      conceptExplanation.style.opacity = "1";
+      conceptExplanation.style.transform = "translateY(0)";
+    }, 200);
+  }
+}
+
+// Function to animate elements when they come into view during scrolling
+function animateOnScroll() {
+  // Elements to animate
+  const featureCards = document.querySelectorAll(".feature-card");
+  const testimonialCards = document.querySelectorAll(".testimonial-card");
+  const elementsToAnimate = [...featureCards, ...testimonialCards];
+
+  // Set initial state for all elements
+  elementsToAnimate.forEach((element) => {
+    element.style.opacity = "0";
+    element.style.transform = "translateY(30px)";
+    element.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+  });
+
+  // Create an IntersectionObserver
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        // If element is in view
+        if (entry.isIntersecting) {
+          // Add animation with a slight delay based on its position
+          const element = entry.target;
+          const delay =
+            (Array.from(elementsToAnimate).indexOf(element) % 3) * 150;
+
+          setTimeout(() => {
+            element.style.opacity = "1";
+            element.style.transform = "translateY(0)";
+          }, delay);
+
+          // Stop observing the element once it's animated
+          observer.unobserve(element);
+        }
+      });
+    },
+    {
+      root: null, // viewport
+      threshold: 0.2, // trigger when 20% of the element is visible
+      rootMargin: "0px",
+    }
+  );
+
+  // Observe all elements
+  elementsToAnimate.forEach((element) => {
+    observer.observe(element);
+  });
+}
 
 // Function to scroll to a section with navbar offset
 function scrollToSection(sectionId) {

@@ -9,51 +9,114 @@
 {% block content %}
 <!-- Hero Section -->
 <header class="hero-section text-white text-center py-5">
-    <div class="container">
-        <h1 class="display-3 mb-3">🏀 Fantasy Basketball</h1>
-        <p class="lead">Create, follow and share your Fantasy Basketball tournaments, matches and player statistics</p>
-        
-        <!-- Enhanced Product Introduction -->
-        <div class="row mt-4 mb-4">
-            <div class="col-md-4">
-                <div class="hero-feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-users"></i>
+    <div class="animated-bg">
+        <div class="basketball-icon floating" style="top: 15%; left: 10%"><i class="fas fa-basketball-ball"></i></div>
+        <div class="basketball-icon floating" style="top: 70%; left: 80%"><i class="fas fa-basketball-ball"></i></div>
+        <div class="basketball-icon floating" style="top: 80%; left: 20%"><i class="fas fa-chart-line"></i></div>
+        <div class="basketball-icon floating" style="top: 20%; left: 90%"><i class="fas fa-trophy"></i></div>
+        <div class="basketball-icon floating" style="top: 60%; left: 5%"><i class="fas fa-users"></i></div>
+    </div>
+    <div class="container position-relative">
+        <div class="glow-effect mb-5"></div>
+        <div class="hero-content">
+            <h1 class="display-3 mb-3 text-glow">🏀 Fantasy Basketball</h1>
+            <div class="animated-border mb-4"></div>
+            
+            <!-- Fantasy Basketball Concept Explanation -->
+            <div class="concept-explanation mb-5 highlight-box">
+                <p>Fantasy Basketball is a virtual sports game where you manage teams, track real performances, and compete against friends. Our platform lets you organize tournaments, analyze statistics, and experience the thrill of basketball management!</p>
+            </div>
+            
+            <!-- Enhanced Product Introduction -->
+            <div class="row mt-4 mb-5">
+                <div class="col-md-4">
+                    <div class="hero-feature-card">
+                        <div class="feature-icon pulse">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="gradient-border"></div>
+                        <h3>For Coaches & Managers</h3>
+                        <p>Seamlessly organize tournaments, track team performance, and manage player statistics in one powerful platform.</p>
                     </div>
-                    <h3>For Coaches & Managers</h3>
-                    <p>Seamlessly organize tournaments, track team performance, and manage player statistics in one powerful platform.</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="hero-feature-card">
+                        <div class="feature-icon pulse">
+                            <i class="fas fa-basketball-ball"></i>
+                        </div>
+                        <div class="gradient-border"></div>
+                        <h3>For Players & Teams</h3>
+                        <p>Follow your stats, track your progress, and showcase your achievements with detailed performance analytics.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="hero-feature-card">
+                        <div class="feature-icon pulse">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="gradient-border"></div>
+                        <h3>For Fans & Spectators</h3>
+                        <p>Stay updated with real-time scores, upcoming matches, and comprehensive team leaderboards.</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="hero-feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-basketball-ball"></i>
-                    </div>
-                    <h3>For Players & Teams</h3>
-                    <p>Follow your stats, track your progress, and showcase your achievements with detailed performance analytics.</p>
-                </div>
+            
+            <div class="cta-container mt-5">
+                <button onclick="scrollToSection('leaderboard')" class="btn btn-hero btn-primary btn-lg me-3 btn-glow">
+                    <i class="fas fa-trophy me-2"></i>View Leaderboard
+                </button>
+                <button onclick="scrollToSection('upcoming')" class="btn btn-hero btn-outline-light btn-lg">
+                    <i class="fas fa-calendar-alt me-2"></i>Upcoming Matches
+                </button>
             </div>
-            <div class="col-md-4">
-                <div class="hero-feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h3>For Fans & Spectators</h3>
-                    <p>Stay updated with real-time scores, upcoming matches, and comprehensive team leaderboards.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-4">
-            <button onclick="scrollToSection('leaderboard')" class="btn btn-light btn-lg me-2">
-                <i class="fas fa-trophy me-2"></i>View Leaderboard
-            </button>
-            <button onclick="scrollToSection('upcoming')" class="btn btn-outline-light btn-lg">
-                <i class="fas fa-calendar-alt me-2"></i>Upcoming Matches
-            </button>
         </div>
     </div>
 </header>
+
+<!-- Testimonials Section -->
+<section class="testimonial-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">📣 What Our Users Say</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-avatar coach-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h4>Basketball Coach</h4>
+                    <p class="quote">"This platform allows me to upload all my tournament data using Excel templates, saving me hours of manual entry. The statistical analysis helps me make better coaching decisions."</p>
+                    <div class="use-case">
+                        <strong>Use Case:</strong> Uploads tournament data via Excel, visualizes team statistics, and shares insights with assistant coaches.
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-avatar player-avatar">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <h4>Team Captain</h4>
+                    <p class="quote">"I can easily track our team's performance across multiple tournaments. The performance visualization helps us identify strengths and areas for improvement."</p>
+                    <div class="use-case">
+                        <strong>Use Case:</strong> Monitors team statistics, analyzes performance trends, and shares results with teammates.
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="testimonial-card">
+                    <div class="testimonial-avatar fan-avatar">
+                        <i class="fas fa-binoculars"></i>
+                    </div>
+                    <h4>Basketball Enthusiast</h4>
+                    <p class="quote">"As a fan, I love being able to follow all the latest scores and upcoming matches. The leaderboard lets me see how my favorite teams are performing at a glance."</p>
+                    <div class="use-case">
+                        <strong>Use Case:</strong> Follows favorite teams, gets notified about upcoming matches, and shares exciting results with friends.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
 <!-- Main Content -->
 <main class="container my-5">
