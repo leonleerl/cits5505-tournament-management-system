@@ -1,225 +1,179 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Basketball Tournament Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                Basketball Tournament
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('main.index') }}">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#matches">Matches</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#players">Players</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#stadiums">Stadiums</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="login.html">Login</a>
-                    </li>
-                </ul>
+{% extends "base.html" %}
+
+{% block title %}Fantasy Basketball{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<header class="hero-section text-white text-center py-5">
+    <div class="container">
+        <h1 class="display-3 mb-3">🏀 Fantasy Basketball</h1>
+        <!-- This requires a more thorough introduction-->
+        <p class="lead">Create, follow and share your Fantasy Basketball tournaments, matches and player statistics</p>
+        <div class="mt-4">
+            <button onclick="scrollToSection('leaderboard')" class="btn btn-light btn-lg me-2">View Leaderboard</button>
+            <button onclick="scrollToSection('upcoming')" class="btn btn-outline-light btn-lg">Upcoming Matches</button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="container my-5">
+    <!-- Leaderboard Section -->
+    <section id="leaderboard" class="mb-5">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Team Leaderboard</h2>
+                <select id="season-select" class="form-select form-select-sm w-auto">
+                    <option value="all" {% if not selected_season %}selected{% endif %}>All Seasons</option>
+                    {% for season in seasons %}
+                    <option value="{{ season.Year }}" {% if selected_season == season.Year|string %}selected{% endif %}>{{ season.Year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Team</th>
+                                <th>Wins</th>
+                                <th>Losses</th>
+                                <th>Win %</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            {% for team in teams %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ team.Name }}</td>
+                                <td>{{ team.wins }}</td>
+                                <td>{{ team.losses }}</td>
+                                <td>
+                                    {% if team.wins + team.losses > 0 %}
+                                        {{ ((team.wins / (team.wins + team.losses)) * 100) | round(1) }}%
+                                    {% else %}
+                                        0.0%
+                                    {% endif %}
+                                </td>
+                                <td>{{ team.points }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </nav>
+    </section>
 
-    <!-- Hero Section -->
-    <header class="hero-section text-white text-center py-5">
-        <div class="container">
-            <h1 class="display-3 mb-3">Basketball Tournament Management</h1>
-            <p class="lead">Follow the latest tournaments, matches and player statistics</p>
-            <div class="mt-4">
-                <button onclick="scrollToSection('leaderboard')"  class="btn btn-light btn-lg me-2">View Leaderboard</button>
-                <button onclick="scrollToSection('upcoming')"  class="btn btn-outline-light btn-lg">Upcoming Matches</button>
+    <!-- Match Calendar Section -->
+    <section id="upcoming" class="mb-5">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h2 class="mb-0">Upcoming Matches</h2>
             </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="container my-5">
-        <!-- Leaderboard Section -->
-        <section id="leaderboard" class="mb-5">
-            <div class="card shadow">
-                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                    <h2 class="mb-0">Team Leaderboard</h2>
-                    <select id="season-select" class="form-select form-select-sm w-auto">
-                        <option value="all" {% if not selected_season %}selected{% endif %}>All Seasons</option>
-                        {% for season in seasons %}
-                        <option value="{{ season.Year }}" {% if selected_season == season.Year|string %}selected{% endif %}>{{ season.Year }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Team</th>
-                                    <th>Wins</th>
-                                    <th>Losses</th>
-                                    <th>Win %</th>
-                                    <th>Points</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leaderboard-body">
-                                {% for team in teams %}
-                                <tr>
-                                    <td>{{ loop.index }}</td>
-                                    <td>{{ team.Name }}</td>
-                                    <td>{{ team.wins }}</td>
-                                    <td>{{ team.losses }}</td>
-                                    <td>
-                                        {% if team.wins + team.losses > 0 %}
-                                            {{ ((team.wins / (team.wins + team.losses)) * 100) | round(1) }}%
-                                        {% else %}
-                                            0.0%
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ team.points }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Match Calendar Section -->
-        <section id="upcoming" class="mb-5">
-            <div class="card shadow">
-                <div class="card-header bg-secondary text-white">
-                    <h2 class="mb-0">Upcoming Matches</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row" id="match-calendar">
-                        {% if upcoming_matches %}
-                            {% for match in upcoming_matches %}
-                            <div class="col-md-6 col-lg-3 mb-4">
-                                <div class="card match-card h-100">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="card-title mb-0">{{ match.MatchDate.strftime('%b %d, %H:%M') }}</h5>
+            <div class="card-body">
+                <div class="row" id="match-calendar">
+                    {% if upcoming_matches %}
+                        {% for match in upcoming_matches %}
+                        <div class="col-md-6 col-lg-3 mb-4">
+                            <div class="card match-card h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="card-title mb-0">{{ match.MatchDate.strftime('%b %d, %H:%M') }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="text-center">
+                                            <h6>{{ match.team1.Name }}</h6>
+                                        </div>
+                                        <div class="vs">VS</div>
+                                        <div class="text-center">
+                                            <h6>{{ match.team2.Name }}</h6>
+                                        </div>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <div class="text-center">
-                                                <h6>{{ match.team1.Name }}</h6>
-                                            </div>
-                                            <div class="vs">VS</div>
-                                            <div class="text-center">
-                                                <h6>{{ match.team2.Name }}</h6>
-                                            </div>
-                                        </div>
-                                        <div class="text-center mt-3">
-                                            <small class="text-muted">
-                                                <i class="fas fa-map-marker-alt me-1"></i> {{ match.stadium.Name }}
-                                            </small>
-                                        </div>
+                                    <div class="text-center mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ match.stadium.Name }}
+                                        </small>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="col-12 text-center">No upcoming matches scheduled at this time.</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Recent Matches Section -->
-        <section id="recent-matches" class="mb-5">
-            <div id="recent-matches-list">
-                {% if recent_matches %}
-                <div class="match-results-container border rounded">
-                    <div class="match-header bg-secondary text-white p-3">
-                        <h2>Recent Match Results</h2>
-                    </div>
-                    
-                    {% for match in recent_matches %}
-                    <div class="match-item p-3 {% if not loop.last %}border-bottom{% endif %}">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="match-score-display">
-                                {% set team1_wins = match.score and match.score.Team1Score > match.score.Team2Score %}
-                                {% set team2_wins = match.score and match.score.Team2Score > match.score.Team1Score %}
-                                
-                                <span class="score-text {% if team1_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                    {{ match.score.Team1Score if match.score else '0' }}
-                                </span>
-                                <span class="team-name mx-2">{{ match.team1.Name }}</span>
-                                <span class="vs-text">vs</span>
-                                <span class="score-text {% if team2_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                    {{ match.score.Team2Score if match.score else '0' }}
-                                </span>
-                                <span class="team-name mx-2">{{ match.team2.Name }}</span>
-                            </div>
-                            <button class="btn btn-outline-primary btn-sm detail-btn">
-                                <i class="fas fa-eye"></i> Details
-                            </button>
                         </div>
-                        <div class="match-date">
-                            <i class="far fa-calendar-alt me-2"></i>{{ match.MatchDate.strftime('%b %d, %H:%M') }}
-                        </div>
-                    </div>
-                    {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12 text-center">No upcoming matches scheduled at this time.</div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="text-center">No recent match results available.</div>
-                {% endif %}
-            </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-dark text-white py-4">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Basketball Tournament Management System</h5>
-                    <p>An interactive platform for managing basketball tournaments and tracking player statistics.</p>
-                </div>
-                <div class="col-md-3">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.index') }}" class="text-white">Home</a></li>
-                        <li><a href="#matches" class="text-white">Matches</a></li>
-                        <li><a href="#players" class="text-white">Players</a></li>
-                        <li><a href="login.html" class="text-white">Login</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h5>Contact</h5>
-                    <ul class="list-unstyled">
-                        <li><i class="fas fa-envelope me-2"></i> Agile Web Development Master Group 9</li>
-                    </ul>
-                </div>
-            </div>
-            <hr>
-            <div class="text-center">
-                <p>&copy; 2025 Basketball Tournament Management System. All rights reserved.</p>
             </div>
         </div>
-    </footer>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-</body>
-</html> 
+    <!-- Recent Matches Section -->
+    <section id="recent-matches" class="mb-5">
+        <div id="recent-matches-list">
+            {% if recent_matches %}
+            <div class="match-results-container border rounded">
+                <div class="match-header bg-secondary text-white p-3">
+                    <h2>Recent Match Results</h2>
+                </div>
+                
+                {% for match in recent_matches %}
+                <div class="match-item p-3 {% if not loop.last %}border-bottom{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="match-score-display">
+                            {% set team1_wins = match.score and match.score.Team1Score > match.score.Team2Score %}
+                            {% set team2_wins = match.score and match.score.Team2Score > match.score.Team1Score %}
+                            
+                            <span class="score-text {% if team1_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ match.score.Team1Score if match.score else '0' }}
+                            </span>
+                            <span class="team-name mx-2">{{ match.team1.Name }}</span>
+                            <span class="vs-text">vs</span>
+                            <span class="score-text {% if team2_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ match.score.Team2Score if match.score else '0' }}
+                            </span>
+                            <span class="team-name mx-2">{{ match.team2.Name }}</span>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm detail-btn">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                    </div>
+                    <div class="match-date">
+                        <i class="far fa-calendar-alt me-2"></i>{{ match.MatchDate.strftime('%b %d, %H:%M') }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center">No recent match results available.</div>
+            {% endif %}
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function scrollToSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    // Handle season select change
+    document.getElementById('season-select').addEventListener('change', function() {
+        const seasonValue = this.value;
+        const currentUrl = new URL(window.location.href);
+        
+        if (seasonValue === 'all') {
+            currentUrl.searchParams.delete('season');
+        } else {
+            currentUrl.searchParams.set('season', seasonValue);
+        }
+        
+        window.location.href = currentUrl.toString();
+    });
+</script>
+{% endblock %}
