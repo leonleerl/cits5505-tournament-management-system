@@ -1,6 +1,8 @@
 # recreate_db.py
 import os
 import sqlite3
+import subprocess
+import sys
 
 # Remove existing database file if it exists
 db_paths = ['cits5505.db', './db/cits5505.db']
@@ -17,3 +19,7 @@ for db_path in db_paths:
 
 print("\nNow run your Flask app to initialize the database schema:")
 print("python app.py")
+
+# Ask if seed data should be created after app initialization
+print("\nAfter running the Flask app to create schema, you can run the following to populate with seed data:")
+print("python seed_db.py")

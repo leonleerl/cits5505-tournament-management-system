@@ -26,7 +26,7 @@
                 <select id="season-select" class="form-select form-select-sm w-auto">
                     <option value="all" {% if not selected_season %}selected{% endif %}>All Seasons</option>
                     {% for season in seasons %}
-                    <option value="{{ season.Year }}" {% if selected_season == season.Year|string %}selected{% endif %}>{{ season.Year }}</option>
+                    <option value="{{ season.year }}" {% if selected_season == season.year|string %}selected{% endif %}>{{ season.year }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -47,7 +47,7 @@
                             {% for team in teams %}
                             <tr>
                                 <td>{{ loop.index }}</td>
-                                <td>{{ team.Name }}</td>
+                                <td>{{ team.name }}</td>
                                 <td>{{ team.wins }}</td>
                                 <td>{{ team.losses }}</td>
                                 <td>
@@ -80,21 +80,21 @@
                         <div class="col-md-6 col-lg-3 mb-4">
                             <div class="card match-card h-100">
                                 <div class="card-header bg-primary text-white">
-                                    <h5 class="card-title mb-0">{{ match.MatchDate.strftime('%b %d, %H:%M') }}</h5>
+                                    <h5 class="card-title mb-0">{{ match.match_date.strftime('%b %d, %H:%M') }}</h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div class="text-center">
-                                            <h6>{{ match.team1.Name }}</h6>
+                                            <h6>{{ match.team1.name }}</h6>
                                         </div>
                                         <div class="vs">VS</div>
                                         <div class="text-center">
-                                            <h6>{{ match.team2.Name }}</h6>
+                                            <h6>{{ match.team2.name }}</h6>
                                         </div>
                                     </div>
                                     <div class="text-center mt-3">
                                         <small class="text-muted">
-                                            <i class="fas fa-map-marker-alt me-1"></i> {{ match.stadium.Name }}
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ match.venue_name }}
                                         </small>
                                     </div>
                                 </div>
@@ -122,25 +122,25 @@
                 <div class="match-item p-3 {% if not loop.last %}border-bottom{% endif %}">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="match-score-display">
-                            {% set team1_wins = match.score and match.score.Team1Score > match.score.Team2Score %}
-                            {% set team2_wins = match.score and match.score.Team2Score > match.score.Team1Score %}
+                            {% set team1_wins = match.score and match.score.team1_score > match.score.team2_score %}
+                            {% set team2_wins = match.score and match.score.team2_score > match.score.team1_score %}
                             
                             <span class="score-text {% if team1_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                {{ match.score.Team1Score if match.score else '0' }}
+                                {{ match.score.team1_score if match.score else '0' }}
                             </span>
-                            <span class="team-name mx-2">{{ match.team1.Name }}</span>
+                            <span class="team-name mx-2">{{ match.team1.name }}</span>
                             <span class="vs-text">vs</span>
                             <span class="score-text {% if team2_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                {{ match.score.Team2Score if match.score else '0' }}
+                                {{ match.score.team2_score if match.score else '0' }}
                             </span>
-                            <span class="team-name mx-2">{{ match.team2.Name }}</span>
+                            <span class="team-name mx-2">{{ match.team2.name }}</span>
                         </div>
                         <button class="btn btn-outline-primary btn-sm detail-btn">
                             <i class="fas fa-eye"></i> Details
                         </button>
                     </div>
                     <div class="match-date">
-                        <i class="far fa-calendar-alt me-2"></i>{{ match.MatchDate.strftime('%b %d, %H:%M') }}
+                        <i class="far fa-calendar-alt me-2"></i>{{ match.match_date.strftime('%b %d, %H:%M') }}
                     </div>
                 </div>
                 {% endfor %}

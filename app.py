@@ -5,6 +5,7 @@ from flask_wtf.csrf import CSRFProtect
 from app.models.database import db
 from app.routes.main_routes import main_bp
 from app.routes.auth_routes import auth_bp
+import subprocess
 
 print("Starting application...")
 
@@ -50,6 +51,20 @@ with app.app_context():
     try:
         db.create_all()
         print("Database tables created successfully")
+        
+        # Check if the database is empty (no users)
+        from app.models.models import User
+        user_count = User.query.count()
+        
+        if user_count == 0:
+            print("Database is empty. Running seed data script...")
+            try:
+                # Import and run seed data function directly
+                from seed_db import create_seed_data
+                create_seed_data()
+                print("Seed data created successfully!")
+            except Exception as e:
+                print(f"Error creating seed data: {e}")
     except Exception as e:
         print(f"Error creating database tables: {e}")
 
