@@ -29,12 +29,12 @@ def index():
    
     # Get tournament years for the dropdown
     tournament_years = db.session.query(Tournament.year).distinct().order_by(desc(Tournament.year)).all()
-    years = [{'Year': year[0]} for year in tournament_years]
+    years = [{'year': year[0]} for year in tournament_years]
     
     # If no years found, use current year
     if not years:
         from datetime import datetime
-        years = [{'Year': datetime.now().year}]
+        years = [{'year': datetime.now().year}]
    
     # Get upcoming matches
     # Filter by date > today

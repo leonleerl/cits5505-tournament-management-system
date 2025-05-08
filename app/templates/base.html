@@ -28,15 +28,6 @@
                         <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}"
                             href="{{ url_for('main.index') }}">Home</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}#matches">Matches</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}#players">Players</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('main.index') }}#stadiums">Stadiums</a>
-                    </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'auth.dashboard' %}active{% endif %}"
