@@ -5,7 +5,13 @@ from flask_wtf.csrf import CSRFProtect
 from app.models.database import db
 from app.routes.main_routes import main_bp
 from app.routes.auth_routes import auth_bp
+
 import subprocess
+
+from flask_login import LoginManager
+ 
+
+
 
 print("Starting application...")
 
@@ -28,6 +34,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 print("Initializing extensions...")
 db.init_app(app)
 csrf.init_app(app)
+
+  # 🔧 Temporary fix for packages expecting this attribute
+
+
+
 
 # Register blueprints
 print("Importing blueprints...")
@@ -67,6 +78,17 @@ with app.app_context():
                 print(f"Error creating seed data: {e}")
     except Exception as e:
         print(f"Error creating database tables: {e}")
+
+
+from app.models.models import User 
+
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'  # Where to redirect on @login_required
+login_manager.init_app(app)
+app.login_manager = login_manager
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 print("Setting up app.run()...")
 if __name__ == '__main__':

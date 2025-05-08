@@ -246,3 +246,11 @@ def upload():
                 return redirect(request.url)
     
     return render_template('upload.html')
+
+@main_bp.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@main_bp.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
