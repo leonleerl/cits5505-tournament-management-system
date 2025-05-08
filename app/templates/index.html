@@ -286,8 +286,8 @@
                 <div class="card-body p-0">
                     {% for match in recent_matches %}
                     <div class="match-item p-4 {% if not loop.last %}border-bottom{% endif %}">
-                        <div class="row align-items-center">
-                            <div class="col-md-7">
+                        <div class="row align-items-center p-2">
+                            <div class="col-md-9">
                                 <div class="d-flex align-items-center flex-wrap">
                                     {% set team1_wins = match.score and match.score.team1_score > match.score.team2_score %}
                                     {% set team2_wins = match.score and match.score.team2_score > match.score.team1_score %}
@@ -333,11 +333,6 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-2 text-md-end mt-3 mt-md-0">
-                                <button class="btn btn-primary">
-                                    <i class="fas fa-chart-bar me-2"></i>Stats
-                                </button>
-                            </div>
                         </div>
                     </div>
                     {% endfor %}
