@@ -2,16 +2,55 @@
 
 {% block title %}Fantasy Basketball{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <header class="hero-section text-white text-center py-5">
     <div class="container">
         <h1 class="display-3 mb-3">🏀 Fantasy Basketball</h1>
-        <!-- This requires a more thorough introduction-->
         <p class="lead">Create, follow and share your Fantasy Basketball tournaments, matches and player statistics</p>
+        
+        <!-- Enhanced Product Introduction -->
+        <div class="row mt-4 mb-4">
+            <div class="col-md-4">
+                <div class="hero-feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>For Coaches & Managers</h3>
+                    <p>Seamlessly organize tournaments, track team performance, and manage player statistics in one powerful platform.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="hero-feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-basketball-ball"></i>
+                    </div>
+                    <h3>For Players & Teams</h3>
+                    <p>Follow your stats, track your progress, and showcase your achievements with detailed performance analytics.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="hero-feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>For Fans & Spectators</h3>
+                    <p>Stay updated with real-time scores, upcoming matches, and comprehensive team leaderboards.</p>
+                </div>
+            </div>
+        </div>
+        
         <div class="mt-4">
-            <button onclick="scrollToSection('leaderboard')" class="btn btn-light btn-lg me-2">View Leaderboard</button>
-            <button onclick="scrollToSection('upcoming')" class="btn btn-outline-light btn-lg">Upcoming Matches</button>
+            <button onclick="scrollToSection('leaderboard')" class="btn btn-light btn-lg me-2">
+                <i class="fas fa-trophy me-2"></i>View Leaderboard
+            </button>
+            <button onclick="scrollToSection('upcoming')" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-calendar-alt me-2"></i>Upcoming Matches
+            </button>
         </div>
     </div>
 </header>
@@ -21,8 +60,8 @@
     <!-- Leaderboard Section -->
     <section id="leaderboard" class="mb-5">
         <div class="card shadow">
-            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">Team Leaderboard</h2>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="fas fa-trophy me-2"></i>Team Leaderboard</h2>
                 <select id="season-select" class="form-select form-select-sm w-auto">
                     <option value="all" {% if not selected_season %}selected{% endif %}>All Seasons</option>
                     {% for season in seasons %}
@@ -32,32 +71,76 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Team</th>
-                                <th>Wins</th>
-                                <th>Losses</th>
-                                <th>Win %</th>
-                                <th>Points</th>
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr class="text-center">
+                                <th class="col-rank">Rank</th>
+                                <th class="col-team">Team</th>
+                                <th class="col-record">Record</th>
+                                <th class="col-win-percent">Win %</th>
+                                <th class="col-points">Points</th>
+                                <th class="col-performance">Performance</th>
                             </tr>
                         </thead>
                         <tbody id="leaderboard-body">
                             {% for team in teams %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ team.name }}</td>
-                                <td>{{ team.wins }}</td>
-                                <td>{{ team.losses }}</td>
+                            <tr class="leaderboard-row">
+                                <td class="text-center">
+                                    <div class="rank-badge {% if loop.index == 1 %}rank-badge-1{% elif loop.index == 2 %}rank-badge-2{% elif loop.index == 3 %}rank-badge-3{% endif %}">
+                                        {{ loop.index }}
+                                    </div>
+                                </td>
                                 <td>
+                                    <div class="team-name-cell">
+                                        <div class="team-logo team-logo-{{ team.logo_shape_type }} team-logo-styled"
+                                             data-primary-color="{{ team.primary_color }}" 
+                                             data-secondary-color="{{ team.secondary_color }}">
+                                            {{ team.name[:2] }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ team.name }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="fw-bold">{{ team.wins }}-{{ team.losses }}</div>
+                                    <div class="win-loss-bar">
+                                        {% set total_games = team.wins + team.losses %}
+                                        {% if total_games > 0 %}
+                                            {% set win_percentage = (team.wins / total_games) * 100 %}
+                                        {% else %}
+                                            {% set win_percentage = 0 %}
+                                        {% endif %}
+                                        <div class="win-bar win-bar-styled" 
+                                             data-win-percentage="{{ win_percentage }}"
+                                             data-primary-color="{{ team.primary_color }}"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
                                     {% if team.wins + team.losses > 0 %}
-                                        {{ ((team.wins / (team.wins + team.losses)) * 100) | round(1) }}%
+                                        <span class="fw-bold team-colored-text" data-primary-color="{{ team.primary_color }}">
+                                            {{ ((team.wins / (team.wins + team.losses)) * 100) | round(1) }}%
+                                        </span>
                                     {% else %}
-                                        0.0%
+                                        <span class="fw-bold text-muted">0.0%</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ team.points }}</td>
+                                <td class="text-center">
+                                    <span class="points-badge">{{ team.points }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center">
+                                        {% for i in range(5) %}
+                                            {% if i < team.wins %}
+                                                <span class="mx-1 badge bg-success">W</span>
+                                            {% elif i < team.wins + team.losses %}
+                                                <span class="mx-1 badge bg-danger">L</span>
+                                            {% else %}
+                                                <span class="mx-1 badge bg-light text-dark">-</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -70,39 +153,59 @@
     <!-- Match Calendar Section -->
     <section id="upcoming" class="mb-5">
         <div class="card shadow">
-            <div class="card-header bg-secondary text-white">
-                <h2 class="mb-0">Upcoming Matches</h2>
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Matches</h2>
             </div>
             <div class="card-body">
                 <div class="row" id="match-calendar">
                     {% if upcoming_matches %}
                         {% for match in upcoming_matches %}
                         <div class="col-md-6 col-lg-3 mb-4">
-                            <div class="card match-card h-100">
-                                <div class="card-header bg-primary text-white">
-                                    <h5 class="card-title mb-0">{{ match.match_date.strftime('%b %d, %H:%M') }}</h5>
+                            <div class="card match-card h-100 border-0 shadow-sm">
+                                <div class="card-header text-white py-3 match-gradient-header"
+                                     data-team1-color="{{ match.team1.primary_color }}"
+                                     data-team2-color="{{ match.team2.primary_color }}">
+                                    <h5 class="card-title mb-0 text-center">{{ match.match_date.strftime('%b %d, %H:%M') }}</h5>
                                 </div>
                                 <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div class="text-center">
-                                            <h6>{{ match.team1.name }}</h6>
+                                    <div class="row align-items-center mb-4">
+                                        <div class="col-5 text-center">
+                                            <div class="team-logo team-logo-{{ match.team1.logo_shape_type }} team-logo-styled mx-auto mb-2"
+                                                 data-primary-color="{{ match.team1.primary_color }}"
+                                                 data-secondary-color="{{ match.team1.secondary_color }}">
+                                                {{ match.team1.name[:2] }}
+                                            </div>
+                                            <h6 class="mb-0">{{ match.team1.name }}</h6>
                                         </div>
-                                        <div class="vs">VS</div>
-                                        <div class="text-center">
-                                            <h6>{{ match.team2.name }}</h6>
+                                        <div class="col-2 text-center">
+                                            <div class="vs py-2">VS</div>
+                                        </div>
+                                        <div class="col-5 text-center">
+                                            <div class="team-logo team-logo-{{ match.team2.logo_shape_type }} team-logo-styled mx-auto mb-2"
+                                                 data-primary-color="{{ match.team2.primary_color }}"
+                                                 data-secondary-color="{{ match.team2.secondary_color }}">
+                                                {{ match.team2.name[:2] }}
+                                            </div>
+                                            <h6 class="mb-0">{{ match.team2.name }}</h6>
                                         </div>
                                     </div>
-                                    <div class="text-center mt-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-map-marker-alt me-1"></i> {{ match.venue_name }}
-                                        </small>
+                                    <div class="text-center mt-3 pt-2 border-top">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                            <span>{{ match.venue_name }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="col-12 text-center">No upcoming matches scheduled at this time.</div>
+                        <div class="col-12 text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                                <h4>No upcoming matches scheduled at this time.</h4>
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -113,40 +216,82 @@
     <section id="recent-matches" class="mb-5">
         <div id="recent-matches-list">
             {% if recent_matches %}
-            <div class="match-results-container border rounded">
-                <div class="match-header bg-secondary text-white p-3">
-                    <h2>Recent Match Results</h2>
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-history me-2"></i>Recent Match Results</h2>
                 </div>
-                
-                {% for match in recent_matches %}
-                <div class="match-item p-3 {% if not loop.last %}border-bottom{% endif %}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="match-score-display">
-                            {% set team1_wins = match.score and match.score.team1_score > match.score.team2_score %}
-                            {% set team2_wins = match.score and match.score.team2_score > match.score.team1_score %}
+                <div class="card-body p-0">
+                    {% for match in recent_matches %}
+                    <div class="match-item p-4 {% if not loop.last %}border-bottom{% endif %}">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <div class="d-flex align-items-center flex-wrap">
+                                    {% set team1_wins = match.score and match.score.team1_score > match.score.team2_score %}
+                                    {% set team2_wins = match.score and match.score.team2_score > match.score.team1_score %}
+                                    
+                                    <div class="text-center me-3 me-md-4">
+                                        <div class="team-logo team-logo-{{ match.team1.logo_shape_type }} team-logo-styled mx-auto mb-2"
+                                             data-primary-color="{{ match.team1.primary_color }}"
+                                             data-secondary-color="{{ match.team1.secondary_color }}">
+                                            {{ match.team1.name[:2] }}
+                                        </div>
+                                        <span class="d-block mb-1">{{ match.team1.name }}</span>
+                                        <span class="team-score {% if team1_wins %}text-success{% else %}text-danger{% endif %}">
+                                            {{ match.score.team1_score if match.score else '0' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mx-2 mx-md-3 d-none d-sm-block">
+                                        <div class="vs fs-4">vs</div>
+                                    </div>
+                                    
+                                    <div class="text-center ms-3 ms-md-4">
+                                        <div class="team-logo team-logo-{{ match.team2.logo_shape_type }} team-logo-styled mx-auto mb-2"
+                                             data-primary-color="{{ match.team2.primary_color }}"
+                                             data-secondary-color="{{ match.team2.secondary_color }}">
+                                            {{ match.team2.name[:2] }}
+                                        </div>
+                                        <span class="d-block mb-1">{{ match.team2.name }}</span>
+                                        <span class="team-score {% if team2_wins %}text-success{% else %}text-danger{% endif %}">
+                                            {{ match.score.team2_score if match.score else '0' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <span class="score-text {% if team1_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                {{ match.score.team1_score if match.score else '0' }}
-                            </span>
-                            <span class="team-name mx-2">{{ match.team1.name }}</span>
-                            <span class="vs-text">vs</span>
-                            <span class="score-text {% if team2_wins %}text-success{% else %}text-danger{% endif %} fw-bold">
-                                {{ match.score.team2_score if match.score else '0' }}
-                            </span>
-                            <span class="team-name mx-2">{{ match.team2.name }}</span>
+                            <div class="col-md-3 text-md-center mt-3 mt-md-0">
+                                <div class="match-date mb-2">
+                                    <i class="far fa-calendar-alt me-2 text-primary"></i>
+                                    {{ match.match_date.strftime('%b %d, %Y') }}
+                                </div>
+                                <div>
+                                    <i class="far fa-clock me-2 text-primary"></i>
+                                    {{ match.match_date.strftime('%H:%M') }}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2 text-md-end mt-3 mt-md-0">
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-chart-bar me-2"></i>Stats
+                                </button>
+                            </div>
                         </div>
-                        <button class="btn btn-outline-primary btn-sm detail-btn">
-                            <i class="fas fa-eye"></i> Details
-                        </button>
                     </div>
-                    <div class="match-date">
-                        <i class="far fa-calendar-alt me-2"></i>{{ match.match_date.strftime('%b %d, %H:%M') }}
-                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
             {% else %}
-            <div class="text-center">No recent match results available.</div>
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="fas fa-history me-2"></i>Recent Match Results</h2>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="text-muted">
+                        <i class="fas fa-basketball-ball fa-3x mb-3"></i>
+                        <h4>No recent match results available.</h4>
+                    </div>
+                </div>
+            </div>
             {% endif %}
         </div>
     </section>
@@ -154,26 +299,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    function scrollToSection(sectionId) {
-        const section = document.getElementById(sectionId);
-        if (section) {
-            section.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-    
-    // Handle season select change
-    document.getElementById('season-select').addEventListener('change', function() {
-        const seasonValue = this.value;
-        const currentUrl = new URL(window.location.href);
-        
-        if (seasonValue === 'all') {
-            currentUrl.searchParams.delete('season');
-        } else {
-            currentUrl.searchParams.set('season', seasonValue);
-        }
-        
-        window.location.href = currentUrl.toString();
-    });
-</script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}
