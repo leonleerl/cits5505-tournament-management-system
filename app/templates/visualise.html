@@ -2,505 +2,347 @@
 
 {% block title %}Visualise Data - Fantasy Basketball{% endblock %}
 
+{% block extra_css %}
+<style>
+    .chart-container {
+        position: relative;
+        height: 350px;
+        margin-bottom: 20px;
+    }
+    
+    .stats-card {
+        transition: transform 0.3s;
+        border-left: 4px solid;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .border-left-primary {
+        border-left-color: var(--bs-primary);
+    }
+    
+    .border-left-success {
+        border-left-color: var(--bs-success);
+    }
+    
+    .border-left-info {
+        border-left-color: var(--bs-info);
+    }
+    
+    .border-left-warning {
+        border-left-color: var(--bs-warning);
+    }
+    
+    .bracket-match {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .match-team {
+        padding: 5px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .match-team:last-child {
+        border-bottom: none;
+    }
+    
+    #loadingSpinner {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+    }
+    
+    .filter-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="text-center p-3 bg-white rounded shadow">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 mb-0">Loading visualisation data...</p>
+</div>
+
 <!-- Data Visualisation Section -->
 <section class="py-5">
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Tournament Data Visualisation</h1>
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="vizOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-share-alt me-2"></i> Share
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" id="exportPDF">
+                    <i class="fas fa-file-pdf me-2"></i> Export PDF
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="vizOptionsDropdown">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i> Export as PDF</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-envelope me-2"></i> Email Report</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('auth.dashboard') }}"><i class="fas fa-user-plus me-2"></i> Share with Users</a></li>
-                </ul>
             </div>
         </div>
         
+        <!-- Filter Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="filter-section">
+                    <form id="vizFiltersForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="tournamentSelect" class="form-label">Tournament</label>
+                            <select class="form-select" id="tournamentSelect">
+                                <option value="all">All Tournaments</option>
+                                {% for tournament in tournaments %}
+                                <option value="{{ tournament.id }}">{{ tournament.name }} ({{ tournament.year }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="teamSelect" class="form-label">Team</label>
+                            <select class="form-select" id="teamSelect">
+                                <option value="all">All Teams</option>
+                                <!-- Teams will be populated dynamically based on selected tournament -->
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="playerSelect" class="form-label">Player</label>
+                            <select class="form-select" id="playerSelect">
+                                <option value="all">All Players</option>
+                                <!-- Players will be populated dynamically based on selected team -->
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-filter me-2"></i> Apply Filters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
         <div class="row">
-            <!-- Filter Sidebar -->
-            <div class="col-lg-3 mb-4">
+            <!-- Tournament Summary Cards -->
+            <div class="col-12 mb-4">
                 <div class="card shadow">
                     <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Filters</h4>
+                        <h4 class="mb-0 tournament-title">Tournament Summary</h4>
                     </div>
                     <div class="card-body">
-                        <form id="vizFiltersForm">
-                            <div class="mb-3">
-                                <label for="tournamentSelect" class="form-label">Tournament</label>
-                                <select class="form-select" id="tournamentSelect">
-                                    <option value="all">All Tournaments</option>
-                                    <option value="1" selected>Summer League 2023</option>
-                                    <option value="2">Winter Championship</option>
-                                    <option value="3">College Playoffs</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="seasonSelect" class="form-label">Season</label>
-                                <select class="form-select" id="seasonSelect">
-                                    <option value="all">All Seasons</option>
-                                    <option value="2023" selected>2023</option>
-                                    <option value="2022">2022</option>
-                                    <option value="2021">2021</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="teamSelect" class="form-label">Team</label>
-                                <select class="form-select" id="teamSelect">
-                                    <option value="all">All Teams</option>
-                                    <option value="1">Lakers</option>
-                                    <option value="2">Bulls</option>
-                                    <option value="3">Celtics</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="playerSelect" class="form-label">Player</label>
-                                <select class="form-select" id="playerSelect">
-                                    <option value="all">All Players</option>
-                                    <option value="1">Michael Johnson</option>
-                                    <option value="2">James Williams</option>
-                                    <option value="3">Robert Davis</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="dateRangeStart" class="form-label">Date Range</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                    <input type="date" class="form-control" id="dateRangeStart">
-                                </div>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                    <input type="date" class="form-control" id="dateRangeEnd">
+                        <div class="row">
+                            <div class="col-md-3 mb-4">
+                                <div class="card stats-card h-100 border-left-primary">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <div class="text-xs text-uppercase fw-bold text-primary mb-1">
+                                                    Teams
+                                                </div>
+                                                <div class="h3 mb-0 fw-bold" id="teamsCount">-</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-users fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                            <div class="col-md-3 mb-4">
+                                <div class="card stats-card h-100 border-left-success">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <div class="text-xs text-uppercase fw-bold text-success mb-1">
+                                                    Players
+                                                </div>
+                                                <div class="h3 mb-0 fw-bold" id="playersCount">-</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-user fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </form>
+                            <div class="col-md-3 mb-4">
+                                <div class="card stats-card h-100 border-left-info">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <div class="text-xs text-uppercase fw-bold text-info mb-1">
+                                                    Matches Played
+                                                </div>
+                                                <div class="h3 mb-0 fw-bold" id="matchesCount">-</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-basketball-ball fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-4">
+                                <div class="card stats-card h-100 border-left-warning">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col">
+                                                <div class="text-xs text-uppercase fw-bold text-warning mb-1">
+                                                    Avg Points/Game
+                                                </div>
+                                                <div class="h3 mb-0 fw-bold" id="avgPointsPerGame">-</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Visualisation Content -->
-            <div class="col-lg-9">
-                <!-- View Selector Tabs -->
-                <ul class="nav nav-tabs mb-4" id="vizTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="team-stats-tab" data-bs-toggle="tab" data-bs-target="#team-stats" type="button" role="tab">Team Statistics</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="player-stats-tab" data-bs-toggle="tab" data-bs-target="#player-stats" type="button" role="tab">Player Statistics</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="brackets-tab" data-bs-toggle="tab" data-bs-target="#brackets" type="button" role="tab">Tournament Brackets</button>
-                    </li>
-                </ul>
-                
-                <!-- Tab Content -->
-                <div class="tab-content" id="vizTabContent">
-                    <!-- Overview Tab -->
-                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                        <div class="card shadow mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h4 class="mb-0">Tournament Summary: Summer League 2023</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-3 mb-4">
-                                        <div class="card stats-card h-100 border-left-primary">
-                                            <div class="card-body">
-                                                <div class="row no-gutters align-items-center">
-                                                    <div class="col mr-2">
-                                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                            Teams</div>
-                                                        <div class="h5 mb-0 font-weight-bold text-gray-800">8</div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <i class="fas fa-users fa-2x text-gray-300"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-4">
-                                        <div class="card stats-card h-100 border-left-success">
-                                            <div class="card-body">
-                                                <div class="row no-gutters align-items-center">
-                                                    <div class="col mr-2">
-                                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                            Players</div>
-                                                        <div class="h5 mb-0 font-weight-bold text-gray-800">96</div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <i class="fas fa-user fa-2x text-gray-300"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-4">
-                                        <div class="card stats-card h-100 border-left-info">
-                                            <div class="card-body">
-                                                <div class="row no-gutters align-items-center">
-                                                    <div class="col mr-2">
-                                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                            Matches Played</div>
-                                                        <div class="h5 mb-0 font-weight-bold text-gray-800">28</div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <i class="fas fa-basketball fa-2x text-gray-300"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 mb-4">
-                                        <div class="card stats-card h-100 border-left-warning">
-                                            <div class="card-body">
-                                                <div class="row no-gutters align-items-center">
-                                                    <div class="col mr-2">
-                                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                            Avg Points/Game</div>
-                                                        <div class="h5 mb-0 font-weight-bold text-gray-800">98.5</div>
-                                                    </div>
-                                                    <div class="col-auto">
-                                                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-8 mb-4">
-                                        <h5>Points Per Game Trend</h5>
-                                        <div class="chart-container">
-                                            <div class="chart-placeholder">
-                                                <div class="text-center">
-                                                    <i class="fas fa-chart-line fa-3x mb-3 text-secondary"></i>
-                                                    <p class="mb-0">Points per game trend visualisation will appear here</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 mb-4">
-                                        <h5>Top Performers</h5>
-                                        <div class="list-group">
-                                            <a href="#" class="list-group-item list-group-item-action">
-                                                <div class="d-flex w-100 justify-content-between">
-                                                    <h6 class="mb-1">Michael Johnson</h6>
-                                                    <small>Lakers</small>
-                                                </div>
-                                                <p class="mb-1">28.5 PPG, 7.2 RPG, 6.8 APG</p>
-                                            </a>
-                                            <a href="#" class="list-group-item list-group-item-action">
-                                                <div class="d-flex w-100 justify-content-between">
-                                                    <h6 class="mb-1">James Williams</h6>
-                                                    <small>Bulls</small>
-                                                </div>
-                                                <p class="mb-1">26.3 PPG, 5.1 RPG, 8.7 APG</p>
-                                            </a>
-                                            <a href="#" class="list-group-item list-group-item-action">
-                                                <div class="d-flex w-100 justify-content-between">
-                                                    <h6 class="mb-1">Robert Davis</h6>
-                                                    <small>Celtics</small>
-                                                </div>
-                                                <p class="mb-1">24.8 PPG, 11.2 RPG, 3.1 APG</p>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            <!-- Team Performance Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Team Standings</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="teamStandingsChart"></canvas>
                         </div>
                     </div>
-                    
-                    <!-- Team Statistics Tab -->
-                    <div class="tab-pane fade" id="team-stats" role="tabpanel">
-                        <div class="card shadow mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h4 class="mb-0">Team Performance Statistics</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <h5>Team Win-Loss Record</h5>
-                                        <div class="chart-container">
-                                            <div class="chart-placeholder">
-                                                <div class="text-center">
-                                                    <i class="fas fa-chart-bar fa-3x mb-3 text-secondary"></i>
-                                                    <p class="mb-0">Team win-loss record visualisation will appear here</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h5>Points Scored vs. Conceded</h5>
-                                        <div class="chart-container">
-                                            <div class="chart-placeholder">
-                                                <div class="text-center">
-                                                    <i class="fas fa-chart-line fa-3x mb-3 text-secondary"></i>
-                                                    <p class="mb-0">Points scored vs. conceded visualisation will appear here</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead class="bg-primary text-white">
-                                            <tr>
-                                                <th>Team</th>
-                                                <th>Wins</th>
-                                                <th>Losses</th>
-                                                <th>Win %</th>
-                                                <th>PPG</th>
-                                                <th>PAPG</th>
-                                                <th>+/-</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Lakers</td>
-                                                <td>23</td>
-                                                <td>5</td>
-                                                <td>82.1%</td>
-                                                <td>105.3</td>
-                                                <td>95.8</td>
-                                                <td>+9.5</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Bulls</td>
-                                                <td>19</td>
-                                                <td>9</td>
-                                                <td>67.9%</td>
-                                                <td>102.1</td>
-                                                <td>97.2</td>
-                                                <td>+4.9</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Celtics</td>
-                                                <td>17</td>
-                                                <td>11</td>
-                                                <td>60.7%</td>
-                                                <td>99.7</td>
-                                                <td>96.8</td>
-                                                <td>+2.9</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Bucks</td>
-                                                <td>15</td>
-                                                <td>13</td>
-                                                <td>53.6%</td>
-                                                <td>98.2</td>
-                                                <td>97.6</td>
-                                                <td>+0.6</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Warriors</td>
-                                                <td>14</td>
-                                                <td>14</td>
-                                                <td>50.0%</td>
-                                                <td>101.3</td>
-                                                <td>101.8</td>
-                                                <td>-0.5</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                </div>
+            </div>
+            
+            <!-- Points Distribution Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Points Scored vs. Conceded</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="pointsDistributionChart"></canvas>
                         </div>
                     </div>
-                    
-                    <!-- Player Statistics Tab -->
-                    <div class="tab-pane fade" id="player-stats" role="tabpanel">
-                        <div class="card shadow mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h4 class="mb-0">Player Performance Statistics</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <h5>Top Scorers</h5>
-                                        <div class="chart-container">
-                                            <div class="chart-placeholder">
-                                                <div class="text-center">
-                                                    <i class="fas fa-chart-bar fa-3x mb-3 text-secondary"></i>
-                                                    <p class="mb-0">Top scorers visualisation will appear here</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <h5>Performance Metrics</h5>
-                                        <div class="chart-container">
-                                            <div class="chart-placeholder">
-                                                <div class="text-center">
-                                                    <i class="fas fa-chart-pie fa-3x mb-3 text-secondary"></i>
-                                                    <p class="mb-0">Player performance metrics visualisation will appear here</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead class="bg-primary text-white">
-                                            <tr>
-                                                <th>Player</th>
-                                                <th>Team</th>
-                                                <th>GP</th>
-                                                <th>PPG</th>
-                                                <th>RPG</th>
-                                                <th>APG</th>
-                                                <th>FG%</th>
-                                                <th>3P%</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Michael Johnson</td>
-                                                <td>Lakers</td>
-                                                <td>28</td>
-                                                <td>28.5</td>
-                                                <td>7.2</td>
-                                                <td>6.8</td>
-                                                <td>49.2%</td>
-                                                <td>38.7%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>James Williams</td>
-                                                <td>Bulls</td>
-                                                <td>27</td>
-                                                <td>26.3</td>
-                                                <td>5.1</td>
-                                                <td>8.7</td>
-                                                <td>45.8%</td>
-                                                <td>41.2%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Robert Davis</td>
-                                                <td>Celtics</td>
-                                                <td>26</td>
-                                                <td>24.8</td>
-                                                <td>11.2</td>
-                                                <td>3.1</td>
-                                                <td>52.3%</td>
-                                                <td>33.6%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>David Thompson</td>
-                                                <td>Warriors</td>
-                                                <td>28</td>
-                                                <td>23.6</td>
-                                                <td>4.3</td>
-                                                <td>5.9</td>
-                                                <td>47.8%</td>
-                                                <td>42.1%</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Kevin Wilson</td>
-                                                <td>Bucks</td>
-                                                <td>25</td>
-                                                <td>21.9</td>
-                                                <td>10.5</td>
-                                                <td>2.7</td>
-                                                <td>53.6%</td>
-                                                <td>30.2%</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                </div>
+            </div>
+            
+            <!-- Top Performers Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Top Scorers</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="topScorersChart"></canvas>
                         </div>
                     </div>
-                    
-                    <!-- Tournament Brackets Tab -->
-                    <div class="tab-pane fade" id="brackets" role="tabpanel">
-                        <div class="card shadow mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h4 class="mb-0">Tournament Bracket: Summer League 2023</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="tournament-bracket">
-                                    <div class="d-flex justify-content-between">
-                                        <!-- Quarterfinals -->
-                                        <div class="bracket-round" style="width: 180px;">
-                                            <h6 class="text-center mb-3">Quarterfinals</h6>
-                                            
-                                            <div class="bracket-match mb-4">
-                                                <div class="match-team">Lakers <span class="float-end fw-bold">95</span></div>
-                                                <div class="match-team">Warriors <span class="float-end">82</span></div>
-                                            </div>
-                                            
-                                            <div class="bracket-match mb-4">
-                                                <div class="match-team">Bulls <span class="float-end fw-bold">88</span></div>
-                                                <div class="match-team">Heat <span class="float-end">75</span></div>
-                                            </div>
-                                            
-                                            <div class="bracket-match mb-4">
-                                                <div class="match-team">Celtics <span class="float-end fw-bold">92</span></div>
-                                                <div class="match-team">Nets <span class="float-end">84</span></div>
-                                            </div>
-                                            
-                                            <div class="bracket-match">
-                                                <div class="match-team">Bucks <span class="float-end fw-bold">97</span></div>
-                                                <div class="match-team">Raptors <span class="float-end">89</span></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Semifinals -->
-                                        <div class="bracket-round" style="width: 180px;">
-                                            <h6 class="text-center mb-3">Semifinals</h6>
-                                            
-                                            <div class="bracket-match mb-4" style="margin-top: 60px;">
-                                                <div class="match-team">Lakers <span class="float-end fw-bold">102</span></div>
-                                                <div class="match-team">Bulls <span class="float-end">94</span></div>
-                                            </div>
-                                            
-                                            <div class="bracket-match" style="margin-top: 120px;">
-                                                <div class="match-team">Celtics <span class="float-end">90</span></div>
-                                                <div class="match-team">Bucks <span class="float-end fw-bold">98</span></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Finals -->
-                                        <div class="bracket-round" style="width: 180px;">
-                                            <h6 class="text-center mb-3">Finals</h6>
-                                            
-                                            <div class="bracket-match" style="margin-top: 140px;">
-                                                <div class="match-team">Lakers <span class="float-end fw-bold">108</span></div>
-                                                <div class="match-team">Bucks <span class="float-end">101</span></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Champion -->
-                                        <div class="bracket-round" style="width: 180px;">
-                                            <h6 class="text-center mb-3">Champion</h6>
-                                            
-                                            <div class="bracket-match bg-primary text-white" style="margin-top: 140px;">
-                                                <div class="text-center">
-                                                    <div class="fw-bold mb-1">Lakers</div>
-                                                    <small>2023 Champions</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
+            </div>
+            
+            <!-- Player Efficiency Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Player Efficiency Ratings</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="playerEfficiencyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Match Score Trends -->
+            <div class="col-md-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Match Score Trends</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="matchScoreTrendsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Stat Comparison -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Player Stat Comparison</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="playerComparisonContainer">
+                            <p class="text-center text-muted mt-4">Select a player from the filter above to see detailed statistics.</p>
+                        </div>
+                        <div class="chart-container" style="display: none;">
+                            <canvas id="playerStatComparisonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Double-Double and Triple-Double Leaders -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Double-Double & Triple-Double Leaders</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="doubleTripleLeadersChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Team Records Table -->
+            <div class="col-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Team Records</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped" id="teamRecordsTable">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>Team</th>
+                                        <th>Wins</th>
+                                        <th>Losses</th>
+                                        <th>Win %</th>
+                                        <th>Pts Scored</th>
+                                        <th>Pts Allowed</th>
+                                        <th>Diff</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Will be populated dynamically -->
+                                    <tr>
+                                        <td colspan="7" class="text-center">Select a tournament to view team records</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -511,18 +353,11 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Add specific visualize page JavaScript here if needed
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle filter form submission
-        const filterForm = document.getElementById('vizFiltersForm');
-        if (filterForm) {
-            filterForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // In a real app, this would update the visualizations
-                alert('Filters applied! In a real app, this would update the visualizations.');
-            });
-        }
-    });
-</script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- jsPDF for exporting charts as PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Your external JS file -->
+<script src="{{ url_for('static', filename='js/visualise.js') }}"></script>
 {% endblock %}

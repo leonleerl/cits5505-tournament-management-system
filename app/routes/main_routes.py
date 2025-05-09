@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy import desc
 import pandas as pd
@@ -107,11 +107,6 @@ def index():
                           upcoming_matches=upcoming_matches,
                           recent_matches=recent_matches,
                           selected_season=year_filter)
-
-@main_bp.route('/visualise')
-def visualise():
-    """Route for data visualization page"""
-    return render_template('visualise.html')
 
 @main_bp.route('/share', methods=['GET', 'POST'])
 @login_required
@@ -512,3 +507,545 @@ def terms():
 @main_bp.route('/privacy')
 def privacy():
     return render_template('privacy.html')
+
+
+@main_bp.route('/visualise')
+def visualise():
+    """Route for data visualization page"""
+    # Get tournaments that the current user has access to
+    if current_user.is_authenticated:
+        # Get tournaments created by the user
+        created_tournaments = Tournament.query.filter_by(creator_id=current_user.id).all()
+        
+        # Get tournaments shared with the user
+        shared_tournament_ids = db.session.query(TournamentAccess.tournament_id)\
+            .filter_by(user_id=current_user.id).all()
+        shared_tournament_ids = [t[0] for t in shared_tournament_ids]
+        
+        shared_tournaments = Tournament.query.filter(Tournament.id.in_(shared_tournament_ids)).all()
+        
+        # Combine both lists
+        tournaments = created_tournaments + shared_tournaments
+        
+        # Remove duplicates
+        tournaments = list({t.id: t for t in tournaments}.values())
+    else:
+        tournaments = []
+    
+    return render_template('visualise.html', tournaments=tournaments)
+
+# Visualisation API Endpoints
+@main_bp.route('/api/tournament_data', methods=['GET'])
+@login_required
+def get_tournament_data():
+    """API endpoint to get tournament data for visualizations"""
+    try:
+        tournament_id = request.args.get('tournament_id', 'all')
+        team_id = request.args.get('team_id', 'all')
+        player_id = request.args.get('player_id', 'all')
+        
+        # Initialize response data
+        response = {
+            'summary': {},
+            'team_standings': {},
+            'points_distribution': {},
+            'top_scorers': {},
+            'player_efficiency': {},
+            'match_score_trends': {},
+            'double_triple_leaders': {},
+            'team_records': {}
+        }
+        
+        # If tournament_id is 'all', get data across all accessible tournaments
+        if tournament_id == 'all':
+            # Get tournaments created by the user
+            created_tournament_ids = [t.id for t in Tournament.query.filter_by(creator_id=current_user.id).all()]
+            
+            # Get tournaments shared with the user
+            shared_tournament_ids = [t[0] for t in db.session.query(TournamentAccess.tournament_id)
+                                .filter_by(user_id=current_user.id).all()]
+            
+            # Combine both lists
+            tournament_ids = list(set(created_tournament_ids + shared_tournament_ids))
+        else:
+            # Check if user has access to the specified tournament
+            tournament = Tournament.query.get_or_404(tournament_id)
+            if tournament.creator_id != current_user.id and not TournamentAccess.query.filter_by(
+                tournament_id=tournament_id, user_id=current_user.id).first():
+                return jsonify({'error': 'Access denied'}), 403
+            
+            tournament_ids = [int(tournament_id)]
+        
+        # Get tournament summary data
+        tournaments = Tournament.query.filter(Tournament.id.in_(tournament_ids)).all()
+        
+        # Get teams for these tournaments
+        teams_query = Team.query.filter(Team.tournament_id.in_(tournament_ids))
+        
+        # Apply team filter if specified
+        if team_id != 'all':
+            teams_query = teams_query.filter_by(id=team_id)
+        
+        teams = teams_query.all()
+        team_ids = [team.id for team in teams]
+        
+        # Get players for these teams
+        players_query = Player.query.filter(Player.team_id.in_(team_ids))
+        
+        # Apply player filter if specified
+        if player_id != 'all':
+            players_query = players_query.filter_by(id=player_id)
+        
+        players = players_query.all()
+        player_ids = [player.id for player in players]
+        
+        # Get matches for these tournaments
+        matches = Match.query.filter(Match.tournament_id.in_(tournament_ids)).all()
+        match_ids = [match.id for match in matches]
+        
+        # Get match scores
+        match_scores = MatchScore.query.filter(MatchScore.match_id.in_(match_ids)).all()
+        
+        # Get player stats
+        player_stats_query = PlayerStats.query.filter(PlayerStats.match_id.in_(match_ids))
+        
+        # Apply player filter if specified
+        if player_id != 'all':
+            player_stats_query = player_stats_query.filter(PlayerStats.player_id.in_(player_ids))
+        
+        player_stats = player_stats_query.all()
+        
+        # Process the data for visualizations
+        
+        # Summary data
+        response['summary'] = {
+            'teams_count': len(teams),
+            'players_count': len(players),
+            'matches_count': len(matches),
+            'avg_points_per_game': _calculate_avg_points_per_game(match_scores) if match_scores else 0
+        }
+        
+        # Team standings
+        response['team_standings'] = _get_team_standings_data(teams)
+        
+        # Points distribution
+        response['points_distribution'] = _get_points_distribution_data(teams, match_scores)
+        
+        # Top scorers
+        response['top_scorers'] = _get_top_scorers_data(players, player_stats)
+        
+        # Player efficiency
+        response['player_efficiency'] = _get_player_efficiency_data(players, player_stats)
+        
+        # Match score trends
+        response['match_score_trends'] = _get_match_score_trends_data(matches, match_scores)
+        
+        # Double-triple leaders
+        response['double_triple_leaders'] = _get_double_triple_leaders_data(players, player_stats)
+        
+        # Team records
+        response['team_records'] = _get_team_records_data(teams, match_scores)
+        
+        return jsonify(response)
+    
+    except Exception as e:
+        print(f"Error in get_tournament_data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/teams', methods=['GET'])
+@login_required
+def get_teams():
+    """API endpoint to get teams for a tournament"""
+    try:
+        tournament_id = request.args.get('tournament_id')
+        
+        if not tournament_id or tournament_id == 'all':
+            return jsonify([])
+        
+        # Check if user has access to the tournament
+        tournament = Tournament.query.get_or_404(tournament_id)
+        if tournament.creator_id != current_user.id and not TournamentAccess.query.filter_by(
+            tournament_id=tournament_id, user_id=current_user.id).first():
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Get teams for the tournament
+        teams = Team.query.filter_by(tournament_id=tournament_id).all()
+        
+        # Format the response
+        team_list = [{'id': team.id, 'name': team.name} for team in teams]
+        
+        return jsonify(team_list)
+    except Exception as e:
+        print(f"Error in get_teams: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/players', methods=['GET'])
+@login_required
+def get_players():
+    """API endpoint to get players for a team"""
+    try:
+        team_id = request.args.get('team_id')
+        
+        if not team_id or team_id == 'all':
+            return jsonify([])
+        
+        # Get team to check tournament access
+        team = Team.query.get_or_404(team_id)
+        
+        # Check if user has access to the tournament
+        tournament = Tournament.query.get_or_404(team.tournament_id)
+        if tournament.creator_id != current_user.id and not TournamentAccess.query.filter_by(
+            tournament_id=tournament.id, user_id=current_user.id).first():
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Get players for the team
+        players = Player.query.filter_by(team_id=team_id).all()
+        
+        # Format the response
+        player_list = [{'id': player.id, 'name': player.name} for player in players]
+        
+        return jsonify(player_list)
+    
+    except Exception as e:
+        print(f"Error in get_players: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Helper functions for processing data
+
+def _calculate_avg_points_per_game(match_scores):
+    """Calculate the average points per game"""
+    if not match_scores:
+        return 0
+    
+    total_points = sum(score.team1_score + score.team2_score for score in match_scores)
+    return round(total_points / (len(match_scores) * 2), 1)  # Divide by 2 teams per match
+
+def _get_team_standings_data(teams):
+    """Format team standings data for visualization"""
+    if not teams:
+        return {'labels': [], 'wins': [], 'losses': []}
+    
+    # Sort teams by wins (descending)
+    sorted_teams = sorted(teams, key=lambda team: team.wins, reverse=True)
+    
+    return {
+        'labels': [team.name for team in sorted_teams],
+        'wins': [team.wins for team in sorted_teams],
+        'losses': [team.losses for team in sorted_teams]
+    }
+
+def _get_points_distribution_data(teams, match_scores):
+    """Format points distribution data for visualization"""
+    if not teams or not match_scores:
+        return {'labels': [], 'points_scored': [], 'points_conceded': []}
+    
+    # Create a dictionary to store team data
+    team_data = {team.id: {
+        'name': team.name,
+        'points_scored': 0,
+        'points_conceded': 0,
+        'games_played': 0
+    } for team in teams}
+    
+    # Process match scores
+    for score in match_scores:
+        match = Match.query.get(score.match_id)
+        
+        # Process team1 data
+        if match.team1_id in team_data:
+            team_data[match.team1_id]['points_scored'] += score.team1_score
+            team_data[match.team1_id]['points_conceded'] += score.team2_score
+            team_data[match.team1_id]['games_played'] += 1
+        
+        # Process team2 data
+        if match.team2_id in team_data:
+            team_data[match.team2_id]['points_scored'] += score.team2_score
+            team_data[match.team2_id]['points_conceded'] += score.team1_score
+            team_data[match.team2_id]['games_played'] += 1
+    
+    # Calculate averages
+    for team_id, data in team_data.items():
+        if data['games_played'] > 0:
+            data['points_scored'] = round(data['points_scored'] / data['games_played'], 1)
+            data['points_conceded'] = round(data['points_conceded'] / data['games_played'], 1)
+    
+    # Sort by points scored (descending)
+    sorted_teams = sorted(team_data.values(), key=lambda x: x['points_scored'], reverse=True)
+    
+    return {
+        'labels': [team['name'] for team in sorted_teams],
+        'points_scored': [team['points_scored'] for team in sorted_teams],
+        'points_conceded': [team['points_conceded'] for team in sorted_teams]
+    }
+
+def _get_top_scorers_data(players, player_stats):
+    """Format top scorers data for visualization"""
+    if not players or not player_stats:
+        return {'labels': [], 'points': [], 'teams': []}
+    
+    # Create a dictionary to store player data
+    player_data = {player.id: {
+        'name': player.name,
+        'total_points': 0,
+        'games_played': 0,
+        'team': Team.query.get(player.team_id).name
+    } for player in players}
+    
+    # Process player stats
+    for stat in player_stats:
+        if stat.player_id in player_data:
+            player_data[stat.player_id]['total_points'] += stat.points
+            player_data[stat.player_id]['games_played'] += 1
+    
+    # Calculate averages
+    for player_id, data in player_data.items():
+        if data['games_played'] > 0:
+            data['ppg'] = round(data['total_points'] / data['games_played'], 1)
+        else:
+            data['ppg'] = 0
+    
+    # Sort by PPG (descending) and take top 5
+    sorted_players = sorted(player_data.values(), key=lambda x: x['ppg'], reverse=True)[:5]
+    
+    return {
+        'labels': [f"{player['name'].split(' ')[0][0]}. {player['name'].split(' ')[-1]}" for player in sorted_players],
+        'points': [player['ppg'] for player in sorted_players],
+        'teams': [player['team'] for player in sorted_players]
+    }
+
+def _get_player_efficiency_data(players, player_stats):
+    """Format player efficiency data for visualization"""
+    if not players or not player_stats:
+        return {'labels': [], 'efficiency': [], 'teams': []}
+    
+    # Create a dictionary to store player data
+    player_data = {player.id: {
+        'name': player.name,
+        'total_efficiency': 0,
+        'games_played': 0,
+        'team': Team.query.get(player.team_id).name
+    } for player in players}
+    
+    # Process player stats
+    for stat in player_stats:
+        if stat.player_id in player_data:
+            player_data[stat.player_id]['total_efficiency'] += stat.efficiency
+            player_data[stat.player_id]['games_played'] += 1
+    
+    # Calculate averages
+    for player_id, data in player_data.items():
+        if data['games_played'] > 0:
+            data['avg_efficiency'] = round(data['total_efficiency'] / data['games_played'], 1)
+        else:
+            data['avg_efficiency'] = 0
+    
+    # Sort by efficiency (descending) and take top 5
+    sorted_players = sorted(player_data.values(), key=lambda x: x['avg_efficiency'], reverse=True)[:5]
+    
+    return {
+        'labels': [f"{player['name'].split(' ')[0][0]}. {player['name'].split(' ')[-1]}" for player in sorted_players],
+        'efficiency': [player['avg_efficiency'] for player in sorted_players],
+        'teams': [player['team'] for player in sorted_players]
+    }
+
+def _get_match_score_trends_data(matches, match_scores):
+    """Format match score trends data for visualization"""
+    if not matches or not match_scores:
+        return {'labels': [], 'winning_scores': [], 'losing_scores': [], 'avg_scores': []}
+    
+    # Create a dictionary to map match_id to match_score
+    score_map = {score.match_id: score for score in match_scores}
+    
+    # Filter matches with scores and sort by date
+    scored_matches = [match for match in matches if match.id in score_map]
+    sorted_matches = sorted(scored_matches, key=lambda x: x.match_date)[:10]  # Last 10 matches
+    
+    labels = []
+    winning_scores = []
+    losing_scores = []
+    avg_scores = []
+    
+    for idx, match in enumerate(sorted_matches):
+        score = score_map[match.id]
+        
+        # Create labels (Game 1, Game 2, etc.)
+        labels.append(f"Game {idx+1}")
+        
+        # Determine winning and losing scores
+        if score.team1_score >= score.team2_score:
+            winning_scores.append(score.team1_score)
+            losing_scores.append(score.team2_score)
+        else:
+            winning_scores.append(score.team2_score)
+            losing_scores.append(score.team1_score)
+        
+        # Calculate average score
+        avg_scores.append(round((score.team1_score + score.team2_score) / 2, 1))
+    
+    return {
+        'labels': labels,
+        'winning_scores': winning_scores,
+        'losing_scores': losing_scores,
+        'avg_scores': avg_scores
+    }
+
+def _get_double_triple_leaders_data(players, player_stats):
+    """Format double-double and triple-double leaders data for visualization"""
+    if not players or not player_stats:
+        return {'labels': [], 'double_doubles': [], 'triple_doubles': []}
+    
+    # Create a dictionary to store player data
+    player_data = {player.id: {
+        'name': player.name,
+        'double_doubles': 0,
+        'triple_doubles': 0
+    } for player in players}
+    
+    # Process player stats
+    for stat in player_stats:
+        if stat.player_id in player_data:
+            if stat.double_double:
+                player_data[stat.player_id]['double_doubles'] += 1
+            if stat.triple_double:
+                player_data[stat.player_id]['triple_doubles'] += 1
+    
+    # Sort by double-doubles and triple-doubles (descending) and take top 5
+    sorted_players = sorted(
+        player_data.values(),
+        key=lambda x: (x['triple_doubles'], x['double_doubles']),
+        reverse=True
+    )[:5]
+    
+    return {
+        'labels': [f"{player['name'].split(' ')[0][0]}. {player['name'].split(' ')[-1]}" for player in sorted_players],
+        'double_doubles': [player['double_doubles'] for player in sorted_players],
+        'triple_doubles': [player['triple_doubles'] for player in sorted_players]
+    }
+
+def _get_team_records_data(teams, match_scores):
+    """Format team records data for visualization"""
+    if not teams or not match_scores:
+        return []
+    
+    # Create a dictionary to store team data
+    team_data = {team.id: {
+        'team': team.name,
+        'wins': team.wins,
+        'losses': team.losses,
+        'win_pct': round(team.wins / (team.wins + team.losses) * 100, 1) if (team.wins + team.losses) > 0 else 0,
+        'pts_scored': 0,
+        'pts_allowed': 0,
+        'games_played': 0
+    } for team in teams}
+    
+    # Process match scores
+    for score in match_scores:
+        match = Match.query.get(score.match_id)
+        
+        # Process team1 data
+        if match.team1_id in team_data:
+            team_data[match.team1_id]['pts_scored'] += score.team1_score
+            team_data[match.team1_id]['pts_allowed'] += score.team2_score
+            team_data[match.team1_id]['games_played'] += 1
+        
+        # Process team2 data
+        if match.team2_id in team_data:
+            team_data[match.team2_id]['pts_scored'] += score.team2_score
+            team_data[match.team2_id]['pts_allowed'] += score.team1_score
+            team_data[match.team2_id]['games_played'] += 1
+    
+    # Calculate averages and point differential
+    for team_id, data in team_data.items():
+        if data['games_played'] > 0:
+            data['pts_scored'] = round(data['pts_scored'] / data['games_played'], 1)
+            data['pts_allowed'] = round(data['pts_allowed'] / data['games_played'], 1)
+            data['diff'] = round(data['pts_scored'] - data['pts_allowed'], 1)
+        else:
+            data['pts_scored'] = 0
+            data['pts_allowed'] = 0
+            data['diff'] = 0
+    
+    # Sort by win percentage (descending)
+    sorted_teams = sorted(team_data.values(), key=lambda x: x['win_pct'], reverse=True)
+    
+    return sorted_teams
+
+@main_bp.route('/api/player_stats', methods=['GET'])
+@login_required
+def get_player_stats():
+    """API endpoint to get detailed player statistics"""
+    try:
+        player_id = request.args.get('player_id')
+        
+        if not player_id:
+            return jsonify({'error': 'Missing player_id parameter'}), 400
+        
+        # Get player details
+        player = Player.query.get_or_404(player_id)
+        
+        # Get team to check tournament access
+        team = Team.query.get_or_404(player.team_id)
+        
+        # Check if user has access to the tournament
+        tournament = Tournament.query.get_or_404(team.tournament_id)
+        if tournament.creator_id != current_user.id and not TournamentAccess.query.filter_by(
+            tournament_id=tournament.id, user_id=current_user.id).first():
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Get player stats from all matches
+        player_stats = PlayerStats.query.filter_by(player_id=player_id).all()
+        
+        if not player_stats:
+            # No stats available, return default data
+            return jsonify({
+                'player_name': player.name,
+                'team_name': team.name,
+                'stat_labels': ['Points', 'Rebounds', 'Assists', 'Steals', 'Blocks', '3-Pointers'],
+                'player_stats': [0, 0, 0, 0, 0, 0],
+                'league_avg_stats': [15.7, 5.2, 4.3, 1.1, 0.6, 1.8]
+            })
+        
+        # Calculate averages
+        total_games = len(player_stats)
+        avg_points = sum(stat.points for stat in player_stats) / total_games
+        avg_rebounds = sum(stat.rebounds for stat in player_stats) / total_games
+        avg_assists = sum(stat.assists for stat in player_stats) / total_games
+        avg_steals = sum(stat.steals for stat in player_stats) / total_games
+        avg_blocks = sum(stat.blocks for stat in player_stats) / total_games
+        avg_three_pointers = sum(stat.three_pointers for stat in player_stats) / total_games
+        
+        # You could calculate league averages from all players, but using fixed values for simplicity
+        # These could be calculated dynamically based on all player stats in the future
+        league_avg_points = 15.7
+        league_avg_rebounds = 5.2
+        league_avg_assists = 4.3
+        league_avg_steals = 1.1
+        league_avg_blocks = 0.6
+        league_avg_three_pointers = 1.8
+        
+        return jsonify({
+            'player_name': player.name,
+            'team_name': team.name,
+            'stat_labels': ['Points', 'Rebounds', 'Assists', 'Steals', 'Blocks', '3-Pointers'],
+            'player_stats': [
+                round(avg_points, 1),
+                round(avg_rebounds, 1),
+                round(avg_assists, 1),
+                round(avg_steals, 1),
+                round(avg_blocks, 1),
+                round(avg_three_pointers, 1)
+            ],
+            'league_avg_stats': [
+                league_avg_points,
+                league_avg_rebounds,
+                league_avg_assists,
+                league_avg_steals,
+                league_avg_blocks,
+                league_avg_three_pointers
+            ]
+        })
+    
+    except Exception as e:
+        print(f"Error in get_player_stats: {str(e)}")
+        return jsonify({'error': str(e)}), 500
