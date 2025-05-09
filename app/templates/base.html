@@ -23,25 +23,42 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}"
                             href="{{ url_for('main.index') }}">Home</a>
                     </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'auth.dashboard' %}active{% endif %}"
-                            href="{{ url_for('auth.dashboard') }}">Dashboard</a>
+                        <a class="nav-link {% if request.endpoint == 'main.visualise' %}active{% endif %}"
+                            href="{{ url_for('main.visualise') }}">Visualise</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        <a class="nav-link {% if request.endpoint == 'main.upload' %}active{% endif %}"
+                            href="{{ url_for('main.upload') }}">Upload Tournament</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.share' %}active{% endif %}"
+                            href="{{ url_for('main.share') }}">Share Tournament</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('auth.signup') }}">Sign Up</a>
+                        <a class="nav-link {% if request.endpoint == 'auth.signup' %}active{% endif %}" href="{{ url_for('auth.signup') }}">Sign Up</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -78,19 +95,18 @@
                     <h5>Quick Links</h5>
                     <ul class="list-unstyled">
                         <li><a href="{{ url_for('main.index') }}" class="text-white">Home</a></li>
-                        <li><a href="{{ url_for('main.index') }}#matches" class="text-white">Matches</a></li>
-                        <li><a href="{{ url_for('main.index') }}#players" class="text-white">Players</a></li>
                         {% if current_user.is_authenticated %}
-                        <li><a href="{{ url_for('auth.dashboard') }}" class="text-white">Dashboard</a></li>
-                        {% else %}
-                        <li><a href="{{ url_for('auth.login') }}" class="text-white">Login</a></li>
+                        <li><a href="{{ url_for('main.visualise') }}" class="text-white">Visualise</a></li>
+                        <li><a href="{{ url_for('main.upload') }}" class="text-white">Upload Tournament</a></li>
+                        <li><a href="{{ url_for('main.share') }}" class="text-white">Share Tournament</a></li>
                         {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>Contact</h5>
+                    <h5>Legal</h5>
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-envelope me-2"></i> Agile Web Development Master Group 9</li>
+                        <li><a href="{{ url_for('main.terms') }}" class="text-white">Terms of Service</a></li>
+                        <li><a href="{{ url_for('main.privacy') }}" class="text-white">Privacy Policy</a></li>
                     </ul>
                 </div>
             </div>
