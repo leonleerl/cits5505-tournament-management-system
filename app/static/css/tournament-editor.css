@@ -1,0 +1,151 @@
+/* Tournament Editor CSS */
+
+.editor-sidebar {
+    border-right: 1px solid #dee2e6;
+    height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+  
+  .tournament-list {
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+  }
+  
+  .tab-content {
+    min-height: 500px;
+  }
+  
+  .entity-table {
+    font-size: 0.9rem;
+  }
+  
+  .editor-tab-pane {
+    padding: 20px;
+  }
+  
+  .stat-input {
+    width: 60px;
+  }
+  
+  .match-card {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .match-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+  
+  .team-color-preview {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+  }
+  
+  /* Tournament list items */
+  .tournament-item {
+    display: flex;
+    flex-direction: column;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .tournament-item.active {
+    border-left-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+  }
+  
+  .tournament-item:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .tournament-item-title {
+    font-weight: 600;
+  }
+  
+  .tournament-item-details {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .editor-sidebar {
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid #dee2e6;
+      margin-bottom: 1rem;
+    }
+    
+    .tournament-list {
+      max-height: 300px;
+    }
+  }
+  
+  /* Animation for loading states */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  
+  /* Style for badge indicators */
+  .stat-badge {
+    font-size: 0.7rem;
+    padding: 0.2em 0.6em;
+  }
+  
+  /* Team colors in tables */
+  .team-colors {
+    display: flex;
+    gap: 4px;
+  }
+  
+  /* Score display in match list */
+  .score-display {
+    font-weight: bold;
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+  }
+  
+  /* Match cards in calendar view */
+  .match-date {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+  
+  .match-team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .match-score {
+    font-weight: bold;
+    min-width: 2rem;
+    text-align: center;
+  }
+  
+  .match-venue {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-style: italic;
+  }
+  
+  /* Player position badges */
+  .position-badge {
+    font-size: 0.7rem;
+    padding: 0.25em 0.6em;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
