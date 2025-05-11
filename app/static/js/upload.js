@@ -1,103 +1,468 @@
 /**
  * Tournament Upload JavaScript
- * Handles client-side validation and interaction for the tournament upload feature
+ * Handles client-side validation, interaction, and animations for the tournament upload feature
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Form elements
-    const uploadForm = document.querySelector('form');
+    const uploadForm = document.querySelector('form.upload-form') || document.querySelector('form');
     const fileInput = document.getElementById('file');
     const confirmCheck = document.getElementById('confirmCheck');
     const submitButton = document.querySelector('input[type="submit"]');
     const fileInfoText = document.querySelector('.form-text');
-   
+    
+    // Custom file upload elements
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const selectedFile = document.getElementById('selectedFile');
+    const removeFileBtn = document.getElementById('removeFile');
+    const uploadProgress = document.getElementById('uploadProgress');
+    
+    // Step indicators
+    const stepItems = document.querySelectorAll('.step-item');
+    const stepProgress = document.querySelectorAll('.step-progress');
+    
     // Size limits
     const maxFileSize = 10 * 1024 * 1024; // 10MB
-   
+    
+    // Initialize the page with animations if available
+    if (typeof initializeAnimations === 'function') {
+        initializeAnimations();
+    } else {
+        // Define the function if not already available
+        window.initializeAnimations = function() {
+            // Animate floating basketballs with random positions
+            document.querySelectorAll('.floating-ball').forEach(ball => {
+                const randomLeft = Math.floor(Math.random() * 80) + 10; // 10% to 90%
+                const randomTop = Math.floor(Math.random() * 80) + 10; // 10% to 90%
+                
+                ball.style.left = `${randomLeft}%`;
+                ball.style.top = `${randomTop}%`;
+            });
+            
+            // Set first step as active if available
+            if (stepItems && stepItems.length > 0) {
+                updateStepStatus(0, 'active');
+            }
+            
+            // Animate section header
+            const header = document.querySelector('.section-header');
+            if (header) {
+                header.classList.add('animated', 'fadeIn');
+            }
+            
+            // Animate cards with staggered delay
+            const cards = document.querySelectorAll('.action-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('animated', 'fadeIn');
+                }, 200 * (index + 1));
+            });
+        }
+        
+        // Call the function
+        initializeAnimations();
+    }
+    
+    // File upload area click handler
+    if (fileUploadArea) {
+        fileUploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        // Drag and drop functionality
+        fileUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        fileUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                validateFile();
+            }
+        });
+    }
+    
     // File selection handler
     if (fileInput) {
         fileInput.addEventListener('change', function(event) {
             validateFile();
         });
     }
-   
+    
+    // Remove file button handler
+    if (removeFileBtn) {
+        removeFileBtn.addEventListener('click', function() {
+            clearFileInput();
+        });
+    }
+    
+    // Global flag to track if we're submitting the form
+    let isSubmitting = false;
+    
     // Form submission
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(event) {
+            // If the form is already being submitted, let it proceed
+            if (isSubmitting) {
+                return;
+            }
+            
+            // Prevent the default form submission temporarily
+            event.preventDefault();
+            
             // Validate file size (WTForms handles other validations)
             if (!validateFileSize()) {
-                event.preventDefault();
                 return false;
             }
-           
+            
+            // Update step indicators if they exist
+            if (stepItems && stepItems.length > 1) {
+                updateStepStatus(1, 'active');
+                updateStepStatus(0, 'completed');
+            }
+            
+            if (stepProgress && stepProgress.length > 0) {
+                updateProgressBar(0, 'completed');
+            }
+            
             // Show loading state
             if (submitButton) {
                 submitButton.disabled = true;
                 submitButton.value = 'Uploading...';
-               
-                // Add a spinner icon next to the button
-                const spinner = document.createElement('span');
-                spinner.className = 'spinner-border spinner-border-sm me-2';
-                spinner.setAttribute('role', 'status');
-                spinner.setAttribute('aria-hidden', 'true');
-                submitButton.parentNode.insertBefore(spinner, submitButton);
+                
+                // Add animation to the submit button if supported
+                submitButton.classList.add('uploading');
+                
+                // Show progress animation
+                if (uploadProgress) {
+                    uploadProgress.classList.add('active');
+                } else {
+                    // Add a spinner icon next to the button (from original code)
+                    const spinner = document.createElement('span');
+                    spinner.className = 'spinner-border spinner-border-sm me-2';
+                    spinner.setAttribute('role', 'status');
+                    spinner.setAttribute('aria-hidden', 'true');
+                    submitButton.parentNode.insertBefore(spinner, submitButton);
+                }
             }
+            
+            // Complete the upload animation sequence with delay
+            setTimeout(function() {
+                // Update step indicators for completion if they exist
+                if (stepItems && stepItems.length > 2) {
+                    updateStepStatus(1, 'completed');
+                    updateStepStatus(2, 'active');
+                }
+                
+                if (stepProgress && stepProgress.length > 1) {
+                    updateProgressBar(1, 'completed');
+                }
+                
+                // Set the isSubmitting flag to true so the event handler won't be triggered again
+                isSubmitting = true;
+                
+                // Create a hidden form and copy all form data to it for submission
+                const hiddenForm = document.createElement('form');
+                hiddenForm.method = uploadForm.method;
+                hiddenForm.action = uploadForm.action;
+                hiddenForm.enctype = uploadForm.enctype;
+                hiddenForm.style.display = 'none';
+                
+                // Copy all form inputs to the hidden form
+                const formData = new FormData(uploadForm);
+                for (const [name, value] of formData.entries()) {
+                    if (name === 'file') {
+                        // Special handling for file input
+                        if (fileInput && fileInput.files.length > 0) {
+                            const newFileInput = document.createElement('input');
+                            newFileInput.type = 'file';
+                            newFileInput.name = 'file';
+                            
+                            // Create a new FileList-like object
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(fileInput.files[0]);
+                            newFileInput.files = dataTransfer.files;
+                            
+                            hiddenForm.appendChild(newFileInput);
+                        }
+                    } else {
+                        // For other inputs
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name;
+                        input.value = value;
+                        hiddenForm.appendChild(input);
+                    }
+                }
+                
+                // Append the hidden form to the body, submit it, and remove it
+                document.body.appendChild(hiddenForm);
+                hiddenForm.submit();
+                document.body.removeChild(hiddenForm);
+                
+            }, 1500); // Delay to show animation
         });
     }
-   
-    // File validation function - only check size since WTForms handles type validation
+    
+    // File validation function - check size since WTForms handles type validation
     function validateFileSize() {
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
             return true; // WTForms will handle the empty file case
         }
-       
+        
         const file = fileInput.files[0];
-       
+        
         // Validate file size
         if (file.size > maxFileSize) {
             showValidationError(fileInput, `File size exceeds maximum limit of ${maxFileSize / 1024 / 1024}MB`);
             return false;
         }
-       
+        
+        return true;
+    }
+    
+    // Update file info when a file is selected
+    function validateFile() {
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        
+        // Check if it's an Excel file (.xlsx extension check from new code)
+        if (file.name.endsWith && !file.name.endsWith('.xlsx')) {
+            showValidationError(fileInput, 'Only .xlsx files are allowed');
+            return;
+        }
+        
+        // Validate file size
+        if (file.size > maxFileSize) {
+            showValidationError(fileInput, `File size exceeds maximum limit of ${maxFileSize / 1024 / 1024}MB`);
+            return;
+        }
+        
+        // Clear any previous validation errors
+        clearValidationError(fileInput);
+        
+        // Update the selected file display
+        if (selectedFile) {
+            const fileNameElement = selectedFile.querySelector('.file-name');
+            if (fileNameElement) {
+                fileNameElement.textContent = file.name;
+            }
+            selectedFile.classList.add('active');
+        }
+        
         // Update file info text
         if (fileInfoText) {
             fileInfoText.innerHTML = `Selected file: <strong>${file.name}</strong> (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
         }
-       
-        return true;
+        
+        // Hide the upload area if using the new UI
+        if (fileUploadArea) {
+            fileUploadArea.style.display = 'none';
+        }
+        
+        // Update step indicators if they exist
+        if (stepItems && stepItems.length > 0) {
+            updateStepStatus(0, 'completed');
+        }
+        
+        // Check if the confirm checkbox is checked
+        if (confirmCheck && confirmCheck.checked) {
+            enableSubmitButton();
+        }
     }
-   
-    // Update file info when a file is selected
-    function validateFile() {
-        validateFileSize();
+    
+    // Clear file input and reset display
+    function clearFileInput() {
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        if (selectedFile) {
+            selectedFile.classList.remove('active');
+        }
+        
+        if (fileUploadArea) {
+            fileUploadArea.style.display = 'block';
+        }
+        
+        if (fileInfoText) {
+            fileInfoText.innerHTML = 'Upload a single Excel file containing all tournament data.';
+        }
+        
+        // Update step indicators if they exist
+        if (stepItems && stepItems.length > 0) {
+            updateStepStatus(0, 'active');
+        }
+        
+        // Disable submit button
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
     }
-   
+    
     // Show validation error
     function showValidationError(element, message) {
         // Add invalid class
         element.classList.remove('is-valid');
         element.classList.add('is-invalid');
-       
+        
+        // Hide the selected file info if using the new UI
+        if (selectedFile) {
+            selectedFile.classList.remove('active');
+        }
+        
+        // Show the upload area if using the new UI
+        if (fileUploadArea) {
+            fileUploadArea.style.display = 'block';
+        }
+        
         // Create or update feedback message
         let feedbackElement = element.nextElementSibling;
         if (!feedbackElement || !feedbackElement.classList.contains('invalid-feedback')) {
             feedbackElement = document.createElement('div');
-            feedbackElement.className = 'invalid-feedback';
+            feedbackElement.className = 'invalid-feedback d-block';
             element.parentNode.insertBefore(feedbackElement, element.nextSibling);
         }
-       
+        
         feedbackElement.textContent = message;
     }
-   
+    
     // Clear validation error
     function clearValidationError(element) {
         // Remove invalid class
         element.classList.remove('is-invalid');
-       
+        
         // Remove feedback message
-        const feedbackElement = element.nextElementSibling;
-        if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-            feedbackElement.remove();
+        const feedbackElements = document.querySelectorAll('.invalid-feedback');
+        feedbackElements.forEach(el => {
+            if (el.classList.contains('d-block')) {
+                el.remove();
+            } else {
+                el.remove();
+            }
+        });
+    }
+    
+    // Enable the submit button if all conditions are met
+    function enableSubmitButton() {
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            return;
         }
+        
+        if (!confirmCheck || !confirmCheck.checked) {
+            return;
+        }
+        
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+    }
+    
+    // Disable the submit button
+    function disableSubmitButton() {
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+    }
+    
+    // Confirm checkbox change handler
+    if (confirmCheck) {
+        confirmCheck.addEventListener('change', function() {
+            if (this.checked && fileInput && fileInput.files && fileInput.files.length > 0) {
+                enableSubmitButton();
+            } else {
+                disableSubmitButton();
+            }
+        });
+    }
+    
+    // Update step status
+    function updateStepStatus(stepIndex, status) {
+        if (!stepItems || stepItems.length <= stepIndex) {
+            return;
+        }
+        
+        // Remove all status classes
+        stepItems[stepIndex].classList.remove('active', 'completed');
+        
+        // Add the new status class
+        stepItems[stepIndex].classList.add(status);
+    }
+    
+    // Update progress bar status
+    function updateProgressBar(progressIndex, status) {
+        if (!stepProgress || stepProgress.length <= progressIndex) {
+            return;
+        }
+        
+        // Remove completed class
+        stepProgress[progressIndex].classList.remove('completed');
+        
+        // Add the new status class if it's 'completed'
+        if (status === 'completed') {
+            stepProgress[progressIndex].classList.add('completed');
+        }
+    }
+    
+    // Reset the form
+    function resetForm() {
+        if (uploadForm) {
+            uploadForm.reset();
+        }
+        
+        clearFileInput();
+        
+        // Reset step indicators
+        if (stepItems) {
+            document.querySelectorAll('.step-item').forEach(item => {
+                item.classList.remove('active', 'completed');
+            });
+        }
+        
+        if (stepProgress) {
+            document.querySelectorAll('.step-progress').forEach(progress => {
+                progress.classList.remove('completed');
+            });
+        }
+        
+        // Set first step as active if it exists
+        if (stepItems && stepItems.length > 0) {
+            updateStepStatus(0, 'active');
+        }
+        
+        // Reset submit button
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.value = 'Upload Tournament';
+            submitButton.classList.remove('uploading');
+        }
+        
+        // Hide progress animation
+        if (uploadProgress) {
+            uploadProgress.classList.remove('active');
+        }
+    }
+    
+    // Scroll to upload form when the upload button is clicked
+    const uploadBtn = document.querySelector('.upload-btn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const formSection = document.getElementById('uploadFormSection');
+            if (formSection) {
+                formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
     }
 
     // =============================================
@@ -131,8 +496,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize modals if Bootstrap is available
     let editModal, deleteModal;
     if (typeof bootstrap !== 'undefined') {
-        editModal = new bootstrap.Modal(editTournamentModal);
-        deleteModal = new bootstrap.Modal(deleteTournamentModal);
+        if (editTournamentModal) {
+            editModal = new bootstrap.Modal(editTournamentModal);
+        }
+        if (deleteTournamentModal) {
+            deleteModal = new bootstrap.Modal(deleteTournamentModal);
+        }
     }
     
     // Get CSRF token from meta tag or form
@@ -152,8 +521,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
     
-    // Load tournaments on page load
-    loadTournaments();
+    // Load tournaments on page load if the table exists
+    if (tournamentTableBody) {
+        loadTournaments();
+    }
     
     // Search button click handler
     if (searchButton) {

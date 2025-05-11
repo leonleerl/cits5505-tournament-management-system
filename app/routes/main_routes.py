@@ -449,7 +449,7 @@ def upload():
                 
                 db.session.commit()
                 flash('Tournament uploaded successfully!', 'success')
-                return redirect(url_for('main.index'))
+                return redirect(url_for('main.upload', success=True))
             
             except Exception as e:
                 db.session.rollback()
