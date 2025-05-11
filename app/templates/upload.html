@@ -5,18 +5,10 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scoreboard-flip.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- Basketball Background Elements -->
-<div class="basketball-bg-elements">
-    <div class="floating-ball ball-1"><i class="fas fa-basketball-ball"></i></div>
-    <div class="floating-ball ball-2"><i class="fas fa-basketball-ball"></i></div>
-    <div class="floating-ball ball-3"><i class="fas fa-basketball-ball"></i></div>
-    <div class="floating-ball ball-4"><i class="fas fa-basketball-ball"></i></div>
-    <div class="court-lines"></div>
-</div>
-
 <!-- Upload Tournament Section -->
 <section class="py-5 tournament-section">
     <div class="container">
@@ -60,7 +52,7 @@
                             <li><span class="icon-ball"></span>Update match schedules and scores</li>
                             <li><span class="icon-ball"></span>Track player statistics</li>
                         </ul>
-                        <div class="d-grid">
+                        <div class="edit-btn-container">
                             <a href="{{ url_for('main.tournament_editor') }}" class="btn btn-success edit-btn">
                                 <span class="btn-clipboard"><i class="fas fa-clipboard-check"></i></span>
                                 <span>Edit Tournaments</span>
@@ -188,12 +180,12 @@
                         {% endif %}
                     </div>
                     
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary rounded-pill px-4 btn-cancel">
+                    <div class="btn-container">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary rounded-pill px-4 btn-cancel standard-btn">
                             <i class="fas fa-times me-2"></i> Cancel
                         </a>
                         <div class="position-relative">
-                            {{ form.submit(class="btn btn-primary submit-btn rounded-pill px-4") }}
+                            {{ form.submit(class="btn btn-primary submit-btn rounded-pill px-4 standard-btn") }}
                             <div class="upload-progress" id="uploadProgress">
                                 <div class="progress-ball">
                                     <i class="fas fa-basketball-ball"></i>
@@ -298,4 +290,5 @@
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 <script src="{{ url_for('static', filename='js/success-modal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/scoreboard-flip.js') }}"></script>
 {% endblock %}

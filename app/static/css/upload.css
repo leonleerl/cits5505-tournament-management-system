@@ -365,10 +365,10 @@
         transform: rotate(0deg);
     }
     25% {
-        transform: rotate(10deg);
+        transform: rotate(60deg);
     }
     75% {
-        transform: rotate(-10deg);
+        transform: rotate(-60deg);
     }
     100% {
         transform: rotate(0deg);
@@ -896,4 +896,36 @@
         top: 120px;
         transform: translateX(-50%) rotate(360deg);
     }
+}
+
+/* Button standardization and centering */
+.btn-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.standard-btn {
+    min-width: 100px;
+    max-width: 250px;
+    text-align: center;
+    margin: 0 10px;
+}
+
+/* Fix for the edit button to prevent stretching */
+.edit-btn-container {
+    display: flex;
+    justify-content: center;
+}
+
+.edit-btn-container .edit-btn {
+    min-width: 100px;
+    max-width: 250px;
+    text-align: center;
+}
+
+/* Keep upload progress centered over the button */
+.position-relative {
+    display: inline-block;
 }
