@@ -1049,3 +1049,181 @@ def get_player_stats():
     except Exception as e:
         print(f"Error in get_player_stats: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+
+    # Upload: Tournament Management Routes
+    # Add these routes to the main_routes.py file
+
+@main_bp.route('/api/tournaments', methods=['GET'])
+@login_required
+def get_tournaments():
+    """API endpoint to get tournaments created by the current user with optional search"""
+    try:
+        # Get search query parameter
+        search_query = request.args.get('q', '')
+        
+        # Base query for tournaments created by current user
+        query = Tournament.query.filter_by(creator_id=current_user.id)
+        
+        # Apply search filter if present
+        if search_query:
+            # Search in name, description, or year
+            search_term = f"%{search_query}%"
+            query = query.filter(
+                db.or_(
+                    Tournament.name.ilike(search_term),
+                    Tournament.description.ilike(search_term),
+                    Tournament.year.cast(db.String).ilike(search_term)
+                )
+            )
+        
+        # Execute query and get results
+        tournaments = query.order_by(Tournament.year.desc(), Tournament.name).all()
+        
+        # Format response
+        result = []
+        for tournament in tournaments:
+            result.append({
+                'id': tournament.id,
+                'name': tournament.name,
+                'description': tournament.description or '',
+                'year': tournament.year,
+                'start_date': tournament.start_date.isoformat() if tournament.start_date else None,
+                'end_date': tournament.end_date.isoformat() if tournament.end_date else None
+            })
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        print(f"Error in get_tournaments: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['GET'])
+@login_required
+def get_tournament(tournament_id):
+    """API endpoint to get details for a specific tournament"""
+    try:
+        # Get tournament
+        tournament = Tournament.query.get_or_404(tournament_id)
+        
+        # Check if user is the creator
+        if tournament.creator_id != current_user.id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Format response
+        result = {
+            'id': tournament.id,
+            'name': tournament.name,
+            'description': tournament.description or '',
+            'year': tournament.year,
+            'start_date': tournament.start_date.isoformat() if tournament.start_date else None,
+            'end_date': tournament.end_date.isoformat() if tournament.end_date else None
+        }
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        print(f"Error in get_tournament: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['PUT'])
+@login_required
+def update_tournament(tournament_id):
+    """API endpoint to update tournament details"""
+    try:
+        # Get tournament
+        tournament = Tournament.query.get_or_404(tournament_id)
+        
+        # Check if user is the creator
+        if tournament.creator_id != current_user.id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Get request data
+        data = request.json
+        
+        # Update tournament fields
+        tournament.name = data.get('name', tournament.name)
+        tournament.description = data.get('description', tournament.description)
+        tournament.year = data.get('year', tournament.year)
+        
+        # Update dates if provided
+        if 'start_date' in data and data['start_date']:
+            start_date = datetime.fromisoformat(data['start_date'])
+            tournament.start_date = start_date.date()
+        
+        if 'end_date' in data and data['end_date']:
+            end_date = datetime.fromisoformat(data['end_date'])
+            tournament.end_date = end_date.date()
+        
+        # Save changes
+        db.session.commit()
+        
+        return jsonify({'message': 'Tournament updated successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in update_tournament: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['DELETE'])
+@login_required
+def delete_tournament(tournament_id):
+    """API endpoint to delete a tournament and all associated data"""
+    try:
+        # Get tournament
+        tournament = Tournament.query.get_or_404(tournament_id)
+        
+        # Check if user is the creator
+        if tournament.creator_id != current_user.id:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Start a transaction
+        db.session.begin_nested()
+        
+        # Delete associated data in correct order (respecting foreign key constraints)
+        
+        # 1. Delete player stats
+        player_ids = db.session.query(Player.id).filter(Player.team_id.in_(
+            db.session.query(Team.id).filter_by(tournament_id=tournament_id)
+        )).all()
+        player_ids = [pid[0] for pid in player_ids]
+        
+        match_ids = db.session.query(Match.id).filter_by(tournament_id=tournament_id).all()
+        match_ids = [mid[0] for mid in match_ids]
+        
+        PlayerStats.query.filter(
+            db.and_(
+                PlayerStats.player_id.in_(player_ids),
+                PlayerStats.match_id.in_(match_ids)
+            )
+        ).delete(synchronize_session=False)
+        
+        # 2. Delete match scores
+        MatchScore.query.filter(MatchScore.match_id.in_(match_ids)).delete(synchronize_session=False)
+        
+        # 3. Delete matches
+        Match.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 4. Delete players
+        Player.query.filter(Player.team_id.in_(
+            db.session.query(Team.id).filter_by(tournament_id=tournament_id)
+        )).delete(synchronize_session=False)
+        
+        # 5. Delete teams
+        Team.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 6. Delete tournament access
+        TournamentAccess.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 7. Delete the tournament
+        db.session.delete(tournament)
+        
+        # Commit the transaction
+        db.session.commit()
+        
+        return jsonify({'message': 'Tournament deleted successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in delete_tournament: {str(e)}")
+        return jsonify({'error': str(e)}), 500
