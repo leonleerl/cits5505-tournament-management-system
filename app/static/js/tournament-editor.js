@@ -97,6 +97,26 @@ document.addEventListener('DOMContentLoaded', function() {
         // Delete confirmation
         document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDelete);
     }
+
+    /**
+     * Get CSRF token from meta tag or form
+     * @returns {string|null} CSRF token or null if not found
+     */
+    function getCsrfToken() {
+        // First try to get it from meta tag
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        
+        // If not in meta tag, try to get it from form
+        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        return null;
+    }
     
     /**
      * Load tournaments with optional search filter
@@ -288,11 +308,15 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Send update request
         fetch(`/api/tournament/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(tournamentData)
         })
@@ -372,6 +396,9 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.disabled = true;
         deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Deleting...';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Determine endpoint based on type
         let endpoint;
         switch (type) {
@@ -396,7 +423,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Send delete request
         fetch(endpoint, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
         })
             .then(response => {
                 if (!response.ok) {
@@ -431,10 +461,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Reload players
                     loadPlayers(currentTournament.id);
                 } else if (type === 'match') {
+                    // If we're deleting a match, we need to remove it from allMatches array
+                    if (allMatches) {
+                        allMatches = allMatches.filter(match => match.id != id);
+                    }
+                    
                     // Reload matches
                     loadMatches(currentTournament.id);
                     
-                    // Reset player stats tab
+                    // Completely reset player stats tab (including dropdowns)
                     resetPlayerStatsTab();
                 }
                 
@@ -652,6 +687,9 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Determine URL and method
         const url = isEditing ? 
             `/api/team/${teamId}` : 
@@ -664,6 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(teamData)
         })
@@ -1003,6 +1042,9 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Determine URL and method
         const url = isEditing ? 
             `/api/player/${playerId}` : 
@@ -1015,6 +1057,7 @@ document.addEventListener('DOMContentLoaded', function() {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(playerData)
         })
@@ -1120,26 +1163,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const statMatchFilter = document.getElementById('statMatchFilter');
         if (!statMatchFilter) return;
         
+        // Store current selection
         const currentValue = statMatchFilter.value;
         
         // Clear options
         statMatchFilter.innerHTML = '<option value="">Select Match</option>';
         
+        // Filter out matches without scores and sort by date
+        const matchesWithScores = matches.filter(match => match.has_score);
+        
         // Add match options
-        matches.forEach(match => {
-            // Only include matches with scores
-            if (match.has_score) {
-                const matchDate = new Date(match.match_date);
-                const dateStr = matchDate.toLocaleDateString();
-                
-                const option = document.createElement('option');
-                option.value = match.id;
-                option.textContent = `${match.team1_name} vs ${match.team2_name} (${dateStr})`;
-                statMatchFilter.appendChild(option);
-            }
+        matchesWithScores.forEach(match => {
+            const matchDate = new Date(match.match_date);
+            const dateStr = matchDate.toLocaleDateString();
+            
+            const option = document.createElement('option');
+            option.value = match.id;
+            option.textContent = `${match.team1_name} vs ${match.team2_name} (${dateStr})`;
+            statMatchFilter.appendChild(option);
         });
         
-        // Try to restore previous selection
+        // Try to restore previous selection if it still exists
         if (currentValue) {
             const exists = Array.from(statMatchFilter.options).some(option => option.value === currentValue);
             statMatchFilter.value = exists ? currentValue : '';
@@ -1393,6 +1437,9 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Determine URL and method
         const url = isEditing ? 
             `/api/match/${matchId}` : 
@@ -1405,6 +1452,7 @@ document.addEventListener('DOMContentLoaded', function() {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(matchData)
         })
@@ -1447,6 +1495,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const noStatsMessage = document.getElementById('noStatsMessage');
         const statsTable = document.getElementById('statsTable');
         const statsTableBody = document.getElementById('statsTableBody');
+        const statMatchFilter = document.getElementById('statMatchFilter');
         
         if (!statsTableBody) return;
         
@@ -1455,10 +1504,15 @@ document.addEventListener('DOMContentLoaded', function() {
         noStatsMessage.classList.remove('d-none');
         statsTableBody.innerHTML = '';
         
-        // Reset match filter to force selection
-        const statMatchFilter = document.getElementById('statMatchFilter');
+        // Reset and clear match filter dropdown
         if (statMatchFilter) {
-            statMatchFilter.value = '';
+            statMatchFilter.innerHTML = '<option value="">Select Match</option>';
+        }
+        
+        // Reset team filter to default
+        const statTeamFilter = document.getElementById('statTeamFilter');
+        if (statTeamFilter) {
+            statTeamFilter.value = 'all';
         }
     }
     
@@ -1469,6 +1523,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const matchId = this.value;
         if (!matchId) {
             resetPlayerStatsTab();
+            return;
+        }
+        
+        // Check if this match still exists in our allMatches array
+        const matchExists = allMatches && allMatches.some(match => match.id == matchId);
+        if (!matchExists) {
+            // If the match no longer exists, reset the dropdown and show an error
+            resetPlayerStatsTab();
+            document.getElementById('noStatsMessage').textContent = 'Match no longer exists. It may have been deleted.';
             return;
         }
         
@@ -1488,6 +1551,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/api/match/${matchId}/stats`)
             .then(response => {
                 if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('Match not found. It may have been deleted.');
+                    }
                     throw new Error('Failed to load statistics');
                 }
                 return response.json();
@@ -1500,7 +1566,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const match = allMatches.find(m => m.id.toString() === matchId);
                 if (!match) {
                     noStatsMessage.classList.remove('d-none');
-                    noStatsMessage.textContent = 'Match not found';
+                    noStatsMessage.textContent = 'Match not found. It may have been deleted.';
                     return;
                 }
                 
@@ -1699,11 +1765,15 @@ document.addEventListener('DOMContentLoaded', function() {
         button.disabled = true;
         button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Send request
         fetch(`/api/match/${matchId}/stats`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify({
                 player_id: playerId,
@@ -1750,11 +1820,15 @@ document.addEventListener('DOMContentLoaded', function() {
         button.disabled = true;
         button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Send request
         fetch(`/api/player/${playerId}/stats/${matchId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(statsData)
         })

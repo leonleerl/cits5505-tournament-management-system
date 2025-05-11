@@ -2,6 +2,12 @@
 
 {% block title %}Tournament Editor - 🏀 Fantasy Basketball{% endblock %}
 
+{% block head %}
+{{ super() }}
+<!-- Meta tag for CSRF token is still useful for JavaScript access -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tournament-editor.css') }}">
@@ -115,31 +121,32 @@
                 <h5 class="mb-4">Tournament Information</h5>
                 
                 <form id="tournamentDetailsForm">
-                  <input type="hidden" id="tournamentId">
+                  {{ tournament_form.hidden_tag() }}
+                  {{ tournament_form.tournament_id(id="tournamentId") }}
                   <div class="row mb-3">
                     <div class="col-md-6">
                       <label for="tournamentName" class="form-label">Tournament Name</label>
-                      <input type="text" class="form-control" id="tournamentName" required>
+                      {{ tournament_form.name(class="form-control", id="tournamentName", required=true) }}
                     </div>
                     <div class="col-md-6">
                       <label for="tournamentYear" class="form-label">Year</label>
-                      <input type="number" class="form-control" id="tournamentYear" required>
+                      {{ tournament_form.year(class="form-control", id="tournamentYear", required=true) }}
                     </div>
                   </div>
                   
                   <div class="mb-3">
                     <label for="tournamentDescription" class="form-label">Description</label>
-                    <textarea class="form-control" id="tournamentDescription" rows="3"></textarea>
+                    {{ tournament_form.description(class="form-control", id="tournamentDescription", rows=3) }}
                   </div>
                   
                   <div class="row mb-3">
                     <div class="col-md-6">
                       <label for="tournamentStartDate" class="form-label">Start Date</label>
-                      <input type="date" class="form-control" id="tournamentStartDate" required>
+                      {{ tournament_form.start_date(class="form-control", id="tournamentStartDate", required=true, type="date") }}
                     </div>
                     <div class="col-md-6">
                       <label for="tournamentEndDate" class="form-label">End Date</label>
-                      <input type="date" class="form-control" id="tournamentEndDate" required>
+                      {{ tournament_form.end_date(class="form-control", id="tournamentEndDate", required=true, type="date") }}
                     </div>
                   </div>
                   
@@ -366,33 +373,29 @@
       </div>
       <div class="modal-body">
         <form id="teamForm">
-          <input type="hidden" id="teamId">
+          {{ team_form.hidden_tag() }}
+          {{ team_form.team_id(id="teamId") }}
           <div class="mb-3">
             <label for="teamName" class="form-label">Team Name</label>
-            <input type="text" class="form-control" id="teamName" required>
+            {{ team_form.name(class="form-control", id="teamName", required=true) }}
           </div>
           <div class="mb-3">
             <label for="teamCreatedYear" class="form-label">Created Year</label>
-            <input type="number" class="form-control" id="teamCreatedYear">
+            {{ team_form.created_year(class="form-control", id="teamCreatedYear") }}
           </div>
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="teamPrimaryColor" class="form-label">Primary Color</label>
-              <input type="color" class="form-control form-control-color w-100" id="teamPrimaryColor" value="#000000">
+              {{ team_form.primary_color(class="form-control form-control-color w-100", id="teamPrimaryColor") }}
             </div>
             <div class="col-md-6">
               <label for="teamSecondaryColor" class="form-label">Secondary Color</label>
-              <input type="color" class="form-control form-control-color w-100" id="teamSecondaryColor" value="#FFFFFF">
+              {{ team_form.secondary_color(class="form-control form-control-color w-100", id="teamSecondaryColor") }}
             </div>
           </div>
           <div class="mb-3">
             <label for="teamLogoShape" class="form-label">Logo Shape</label>
-            <select class="form-select" id="teamLogoShape">
-              <option value="1">Circle</option>
-              <option value="2">Square</option>
-              <option value="3">Shield</option>
-              <option value="4">Star</option>
-            </select>
+            {{ team_form.logo_shape_type(class="form-select", id="teamLogoShape") }}
           </div>
         </form>
       </div>
@@ -414,42 +417,34 @@
       </div>
       <div class="modal-body">
         <form id="playerForm">
-          <input type="hidden" id="playerId">
+          {{ player_form.hidden_tag() }}
+          {{ player_form.player_id(id="playerId") }}
           <div class="mb-3">
             <label for="playerName" class="form-label">Player Name</label>
-            <input type="text" class="form-control" id="playerName" required>
+            {{ player_form.name(class="form-control", id="playerName", required=true) }}
           </div>
           <div class="mb-3">
             <label for="playerTeam" class="form-label">Team</label>
-            <select class="form-select" id="playerTeam" required>
-              <option value="">Select team</option>
-              <!-- Team options will be populated here -->
-            </select>
+            {{ player_form.team_id(class="form-select", id="playerTeam", required=true) }}
           </div>
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="playerPosition" class="form-label">Position</label>
-              <select class="form-select" id="playerPosition" required>
-                <option value="PG">Point Guard (PG)</option>
-                <option value="SG">Shooting Guard (SG)</option>
-                <option value="SF">Small Forward (SF)</option>
-                <option value="PF">Power Forward (PF)</option>
-                <option value="C">Center (C)</option>
-              </select>
+              {{ player_form.position(class="form-select", id="playerPosition", required=true) }}
             </div>
             <div class="col-md-6">
               <label for="playerJerseyNumber" class="form-label">Jersey Number</label>
-              <input type="number" class="form-control" id="playerJerseyNumber" required min="0" max="99">
+              {{ player_form.jersey_number(class="form-control", id="playerJerseyNumber", required=true, min=0, max=99) }}
             </div>
           </div>
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="playerHeight" class="form-label">Height (cm)</label>
-              <input type="number" class="form-control" id="playerHeight" min="150" max="250">
+              {{ player_form.height(class="form-control", id="playerHeight", min=150, max=250) }}
             </div>
             <div class="col-md-6">
               <label for="playerWeight" class="form-label">Weight (kg)</label>
-              <input type="number" class="form-control" id="playerWeight" min="50" max="180">
+              {{ player_form.weight(class="form-control", id="playerWeight", min=50, max=180) }}
             </div>
           </div>
         </form>
@@ -472,34 +467,29 @@
       </div>
       <div class="modal-body">
         <form id="matchForm">
-          <input type="hidden" id="matchId">
+          {{ match_form.hidden_tag() }}
+          {{ match_form.match_id(id="matchId") }}
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="matchTeam1" class="form-label">Team 1</label>
-              <select class="form-select" id="matchTeam1" required>
-                <option value="">Select team</option>
-                <!-- Team options will be populated here -->
-              </select>
+              {{ match_form.team1_id(class="form-select", id="matchTeam1", required=true) }}
             </div>
             <div class="col-md-6">
               <label for="matchTeam2" class="form-label">Team 2</label>
-              <select class="form-select" id="matchTeam2" required>
-                <option value="">Select team</option>
-                <!-- Team options will be populated here -->
-              </select>
+              {{ match_form.team2_id(class="form-select", id="matchTeam2", required=true) }}
             </div>
           </div>
           <div class="mb-3">
             <label for="matchDate" class="form-label">Match Date & Time</label>
-            <input type="datetime-local" class="form-control" id="matchDate" required>
+            {{ match_form.match_date(class="form-control", id="matchDate", required=true) }}
           </div>
           <div class="mb-3">
             <label for="matchVenue" class="form-label">Venue</label>
-            <input type="text" class="form-control" id="matchVenue">
+            {{ match_form.venue_name(class="form-control", id="matchVenue") }}
           </div>
           <div class="mb-3">
             <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="hasScore">
+              {{ match_form.has_score(class="form-check-input", id="hasScore") }}
               <label class="form-check-label" for="hasScore">
                 Match completed (add score)
               </label>
@@ -508,11 +498,11 @@
           <div id="scoreContainer" class="row mb-3 d-none">
             <div class="col-md-6">
               <label for="team1Score" class="form-label">Team 1 Score</label>
-              <input type="number" class="form-control" id="team1Score" min="0">
+              {{ match_form.team1_score(class="form-control", id="team1Score", min=0) }}
             </div>
             <div class="col-md-6">
               <label for="team2Score" class="form-label">Team 2 Score</label>
-              <input type="number" class="form-control" id="team2Score" min="0">
+              {{ match_form.team2_score(class="form-control", id="team2Score", min=0) }}
             </div>
           </div>
         </form>
@@ -534,10 +524,13 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p>Are you sure you want to delete <span id="deleteItemName"></span>?</p>
-        <p class="text-danger"><strong>This action cannot be undone.</strong></p>
-        <input type="hidden" id="deleteItemId">
-        <input type="hidden" id="deleteItemType">
+        <form id="deleteForm">
+          {{ delete_form.hidden_tag() }}
+          {{ delete_form.item_id(id="deleteItemId") }}
+          {{ delete_form.item_type(id="deleteItemType") }}
+          <p>Are you sure you want to delete <span id="deleteItemName"></span>?</p>
+          <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+        </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

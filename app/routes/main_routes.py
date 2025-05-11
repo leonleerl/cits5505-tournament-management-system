@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import re
 from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, ChatMessage, TournamentAccess, db
-from app.forms.forms import TournamentUploadForm
+from app.forms.forms import (TournamentUploadForm, TournamentDetailsForm, TeamForm, PlayerForm, MatchForm, DeleteConfirmForm)
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -1052,11 +1052,27 @@ def get_player_stats():
     
 # tournament_editor: Tournament Management Routes
 
+
 @main_bp.route('/tournament-editor')
 @login_required
 def tournament_editor():
-    """Route for the tournament editor interface"""
-    return render_template('tournament_editor.html')
+    """Route for the tournament editor interface with WTForms"""
+    # Initialize all forms
+    tournament_form = TournamentDetailsForm()
+    team_form = TeamForm()
+    player_form = PlayerForm()
+    match_form = MatchForm()
+    delete_form = DeleteConfirmForm()
+    
+    # The team and player select fields need their choices populated dynamically
+    # in JavaScript, so we don't need to set them here
+    
+    return render_template('tournament_editor.html',
+                          tournament_form=tournament_form,
+                          team_form=team_form,
+                          player_form=player_form,
+                          match_form=match_form,
+                          delete_form=delete_form)
 
 # API Endpoints for Tournament Management
 
