@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Tournament Editor - 🏀 Fantasy Basketball{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tournament-editor.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h1 class="mb-4">Tournament Editor</h1>
+  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  
+  <div class="row g-4">
+    <!-- Tournament Selection Sidebar -->
+    <div class="col-md-3 col-lg-2 editor-sidebar">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">My Tournaments</h5>
+        </div>
+        <div class="card-body">
+          <div class="input-group mb-3">
+            <input type="text" class="form-control" id="tournamentSearch" placeholder="Search...">
+            <button class="btn btn-outline-secondary" type="button" id="searchButton">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+          
+          <div class="d-grid mb-3">
+            <a href="{{ url_for('main.upload') }}" class="btn btn-success">
+              <i class="fas fa-plus-circle me-1"></i> Upload New Tournament
+            </a>
+          </div>
+            
+          <div id="loadingSpinner" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <div class="tournament-list" id="tournamentList">
+            <!-- Tournament items will be loaded here -->
+          </div>
+          
+          <div id="noTournamentsMessage" class="alert alert-info d-none">
+            <i class="fas fa-info-circle me-2"></i> You haven't created any tournaments yet.
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-grid gap-2">
+        <button class="btn btn-outline-danger" id="deleteTournamentBtn">
+          <i class="fas fa-trash-alt me-1"></i> Delete Tournament
+        </button>
+      </div>
+    </div>
+    
+    <!-- Tournament Editor Main Content -->
+    <div class="col-md-9 col-lg-10">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 id="currentTournamentName">Select a Tournament</h4>
+        </div>
+        
+        <div class="card-body">
+          <div id="selectTournamentMessage" class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> Please select a tournament from the sidebar to edit.
+          </div>
+          
+          <!-- Editor Tabs - Hidden until a tournament is selected -->
+          <div id="editorContent" class="d-none">
+            <ul class="nav nav-tabs" id="editorTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">
+                  <i class="fas fa-info-circle me-1"></i> Tournament Details
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="teams-tab" data-bs-toggle="tab" data-bs-target="#teams" type="button" role="tab" aria-controls="teams" aria-selected="false">
+                  <i class="fas fa-users me-1"></i> Teams
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="players-tab" data-bs-toggle="tab" data-bs-target="#players" type="button" role="tab" aria-controls="players" aria-selected="false">
+                  <i class="fas fa-user-alt me-1"></i> Players
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="matches-tab" data-bs-toggle="tab" data-bs-target="#matches" type="button" role="tab" aria-controls="matches" aria-selected="false">
+                  <i class="fas fa-basketball-ball me-1"></i> Matches & Scores
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab" aria-controls="stats" aria-selected="false">
+                  <i class="fas fa-chart-bar me-1"></i> Player Stats
+                </button>
+              </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="editorTabContent">
+              <!-- Tournament Details Tab -->
+              <div class="tab-pane fade show active editor-tab-pane" id="details" role="tabpanel" aria-labelledby="details-tab">
+                <h5 class="mb-4">Tournament Information</h5>
+                
+                <form id="tournamentDetailsForm">
+                  <input type="hidden" id="tournamentId">
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="tournamentName" class="form-label">Tournament Name</label>
+                      <input type="text" class="form-control" id="tournamentName" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="tournamentYear" class="form-label">Year</label>
+                      <input type="number" class="form-control" id="tournamentYear" required>
+                    </div>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <label for="tournamentDescription" class="form-label">Description</label>
+                    <textarea class="form-control" id="tournamentDescription" rows="3"></textarea>
+                  </div>
+                  
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <label for="tournamentStartDate" class="form-label">Start Date</label>
+                      <input type="date" class="form-control" id="tournamentStartDate" required>
+                    </div>
+                    <div class="col-md-6">
+                      <label for="tournamentEndDate" class="form-label">End Date</label>
+                      <input type="date" class="form-control" id="tournamentEndDate" required>
+                    </div>
+                  </div>
+                  
+                  <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save me-1"></i> Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+              
+              <!-- Teams Tab -->
+              <div class="tab-pane fade editor-tab-pane" id="teams" role="tabpanel" aria-labelledby="teams-tab">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <h5 class="mb-0">Teams</h5>
+                  <button class="btn btn-success" id="addTeamBtn">
+                    <i class="fas fa-plus-circle me-1"></i> Add Team
+                  </button>
+                </div>
+                
+                <div id="teamsLoading" class="text-center py-4 d-none">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading teams...</span>
+                  </div>
+                </div>
+                
+                <div id="noTeamsMessage" class="alert alert-info d-none">
+                  <i class="fas fa-info-circle me-2"></i> No teams added to this tournament yet.
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table table-hover entity-table" id="teamsTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Colors</th>
+                        <th>Created Year</th>
+                        <th>W</th>
+                        <th>L</th>
+                        <th>Points</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="teamsTableBody">
+                      <!-- Team rows will be populated here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Players Tab -->
+              <div class="tab-pane fade editor-tab-pane" id="players" role="tabpanel" aria-labelledby="players-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Players</h5>
+                  <div class="d-flex gap-2">
+                    <select class="form-select" id="playerTeamFilter">
+                      <option value="all">All Teams</option>
+                      <!-- Team options will be populated here -->
+                    </select>
+                    <button class="btn btn-success" id="addPlayerBtn">
+                      <i class="fas fa-plus-circle me-1"></i> Add Player
+                    </button>
+                  </div>
+                </div>
+                
+                <div id="playersLoading" class="text-center py-4 d-none">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading players...</span>
+                  </div>
+                </div>
+                
+                <div id="noPlayersMessage" class="alert alert-info d-none">
+                  <i class="fas fa-info-circle me-2"></i> No players added to this tournament yet.
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table table-hover entity-table" id="playersTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Name</th>
+                        <th>Team</th>
+                        <th>Position</th>
+                        <th>#</th>
+                        <th>Height</th>
+                        <th>Weight</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="playersTableBody">
+                      <!-- Player rows will be populated here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Matches Tab -->
+              <div class="tab-pane fade editor-tab-pane" id="matches" role="tabpanel" aria-labelledby="matches-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Matches & Scores</h5>
+                  <button class="btn btn-success" id="addMatchBtn">
+                    <i class="fas fa-plus-circle me-1"></i> Add Match
+                  </button>
+                </div>
+                
+                <div class="mb-3">
+                  <ul class="nav nav-pills" id="matchesViewTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active" id="list-matches-tab" data-bs-toggle="pill" data-bs-target="#list-matches" type="button" role="tab" aria-controls="list-matches" aria-selected="true">
+                        <i class="fas fa-list me-1"></i> List View
+                      </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="calendar-matches-tab" data-bs-toggle="pill" data-bs-target="#calendar-matches" type="button" role="tab" aria-controls="calendar-matches" aria-selected="false">
+                        <i class="fas fa-calendar me-1"></i> Calendar View
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div id="matchesLoading" class="text-center py-4 d-none">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading matches...</span>
+                  </div>
+                </div>
+                
+                <div id="noMatchesMessage" class="alert alert-info d-none">
+                  <i class="fas fa-info-circle me-2"></i> No matches added to this tournament yet.
+                </div>
+                
+                <div class="tab-content" id="matchesViewTabContent">
+                  <div class="tab-pane fade show active" id="list-matches" role="tabpanel" aria-labelledby="list-matches-tab">
+                    <div class="table-responsive">
+                      <table class="table table-hover entity-table" id="matchesTable">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Date</th>
+                            <th>Team 1</th>
+                            <th>Team 2</th>
+                            <th>Score</th>
+                            <th>Venue</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody id="matchesTableBody">
+                          <!-- Match rows will be populated here -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="tab-pane fade" id="calendar-matches" role="tabpanel" aria-labelledby="calendar-matches-tab">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="matchesCardContainer">
+                      <!-- Match cards will be populated here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Player Stats Tab -->
+              <div class="tab-pane fade editor-tab-pane" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h5 class="mb-0">Player Statistics</h5>
+                  <div class="d-flex gap-2">
+                    <select class="form-select" id="statMatchFilter">
+                      <option value="">Select Match</option>
+                      <!-- Match options will be populated here -->
+                    </select>
+                    <select class="form-select" id="statTeamFilter">
+                      <option value="all">All Teams</option>
+                      <!-- Team options will be populated here -->
+                    </select>
+                  </div>
+                </div>
+                
+                <div id="statsLoading" class="text-center py-4 d-none">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading statistics...</span>
+                  </div>
+                </div>
+                
+                <div id="noStatsMessage" class="alert alert-info d-none">
+                  <i class="fas fa-info-circle me-2"></i> No statistics available. Please select a match.
+                </div>
+                
+                <div class="table-responsive">
+                  <table class="table table-hover entity-table" id="statsTable">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Player</th>
+                        <th>Team</th>
+                        <th>PTS</th>
+                        <th>REB</th>
+                        <th>AST</th>
+                        <th>STL</th>
+                        <th>BLK</th>
+                        <th>TO</th>
+                        <th>3P</th>
+                        <th>EFF</th>
+                        <th>DD</th>
+                        <th>TD</th>
+                        <th>Save</th>
+                      </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                      <!-- Stats rows will be populated here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Edit Modal -->
+<div class="modal fade" id="teamModal" tabindex="-1" aria-labelledby="teamModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="teamModalLabel">Add Team</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="teamForm">
+          <input type="hidden" id="teamId">
+          <div class="mb-3">
+            <label for="teamName" class="form-label">Team Name</label>
+            <input type="text" class="form-control" id="teamName" required>
+          </div>
+          <div class="mb-3">
+            <label for="teamCreatedYear" class="form-label">Created Year</label>
+            <input type="number" class="form-control" id="teamCreatedYear">
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="teamPrimaryColor" class="form-label">Primary Color</label>
+              <input type="color" class="form-control form-control-color w-100" id="teamPrimaryColor" value="#000000">
+            </div>
+            <div class="col-md-6">
+              <label for="teamSecondaryColor" class="form-label">Secondary Color</label>
+              <input type="color" class="form-control form-control-color w-100" id="teamSecondaryColor" value="#FFFFFF">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="teamLogoShape" class="form-label">Logo Shape</label>
+            <select class="form-select" id="teamLogoShape">
+              <option value="1">Circle</option>
+              <option value="2">Square</option>
+              <option value="3">Shield</option>
+              <option value="4">Star</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveTeamBtn">Save Team</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Player Edit Modal -->
+<div class="modal fade" id="playerModal" tabindex="-1" aria-labelledby="playerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="playerModalLabel">Add Player</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="playerForm">
+          <input type="hidden" id="playerId">
+          <div class="mb-3">
+            <label for="playerName" class="form-label">Player Name</label>
+            <input type="text" class="form-control" id="playerName" required>
+          </div>
+          <div class="mb-3">
+            <label for="playerTeam" class="form-label">Team</label>
+            <select class="form-select" id="playerTeam" required>
+              <option value="">Select team</option>
+              <!-- Team options will be populated here -->
+            </select>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="playerPosition" class="form-label">Position</label>
+              <select class="form-select" id="playerPosition" required>
+                <option value="PG">Point Guard (PG)</option>
+                <option value="SG">Shooting Guard (SG)</option>
+                <option value="SF">Small Forward (SF)</option>
+                <option value="PF">Power Forward (PF)</option>
+                <option value="C">Center (C)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="playerJerseyNumber" class="form-label">Jersey Number</label>
+              <input type="number" class="form-control" id="playerJerseyNumber" required min="0" max="99">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="playerHeight" class="form-label">Height (cm)</label>
+              <input type="number" class="form-control" id="playerHeight" min="150" max="250">
+            </div>
+            <div class="col-md-6">
+              <label for="playerWeight" class="form-label">Weight (kg)</label>
+              <input type="number" class="form-control" id="playerWeight" min="50" max="180">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="savePlayerBtn">Save Player</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Match Edit Modal -->
+<div class="modal fade" id="matchModal" tabindex="-1" aria-labelledby="matchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="matchModalLabel">Add Match</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="matchForm">
+          <input type="hidden" id="matchId">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="matchTeam1" class="form-label">Team 1</label>
+              <select class="form-select" id="matchTeam1" required>
+                <option value="">Select team</option>
+                <!-- Team options will be populated here -->
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="matchTeam2" class="form-label">Team 2</label>
+              <select class="form-select" id="matchTeam2" required>
+                <option value="">Select team</option>
+                <!-- Team options will be populated here -->
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="matchDate" class="form-label">Match Date & Time</label>
+            <input type="datetime-local" class="form-control" id="matchDate" required>
+          </div>
+          <div class="mb-3">
+            <label for="matchVenue" class="form-label">Venue</label>
+            <input type="text" class="form-control" id="matchVenue">
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="hasScore">
+              <label class="form-check-label" for="hasScore">
+                Match completed (add score)
+              </label>
+            </div>
+          </div>
+          <div id="scoreContainer" class="row mb-3 d-none">
+            <div class="col-md-6">
+              <label for="team1Score" class="form-label">Team 1 Score</label>
+              <input type="number" class="form-control" id="team1Score" min="0">
+            </div>
+            <div class="col-md-6">
+              <label for="team2Score" class="form-label">Team 2 Score</label>
+              <input type="number" class="form-control" id="team2Score" min="0">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="saveMatchBtn">Save Match</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <span id="deleteItemName"></span>?</p>
+        <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+        <input type="hidden" id="deleteItemId">
+        <input type="hidden" id="deleteItemType">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/tournament-editor.js') }}"></script>
+{% endblock %}
