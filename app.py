@@ -38,8 +38,9 @@ app = Flask(__name__,
 # Set up configurations
 print("Setting up configurations...")
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'default-dev-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.abspath("db/cits5505.db")}'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or f'sqlite:///{os.path.abspath("db/cits5505.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # Initialize extensions
 print("Initializing extensions...")
 db.init_app(app)
