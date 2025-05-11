@@ -135,6 +135,23 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteModal = new bootstrap.Modal(deleteTournamentModal);
     }
     
+    // Get CSRF token from meta tag or form
+    function getCsrfToken() {
+        // First try to get it from meta tag
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        
+        // If not in meta tag, try to get it from form
+        const csrfInput = document.querySelector('input[name="csrf_token"]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        return null;
+    }
+    
     // Load tournaments on page load
     loadTournaments();
     
@@ -416,11 +433,15 @@ document.addEventListener('DOMContentLoaded', function() {
             end_date: editTournamentEndDate ? editTournamentEndDate.value : null
         };
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Send update request
         fetch(`/api/tournament/${editTournamentId.value}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
             },
             body: JSON.stringify(tournamentData)
         })
@@ -483,9 +504,15 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmDeleteButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Deleting...';
         }
         
+        // Get CSRF token
+        const csrfToken = getCsrfToken();
+        
         // Send delete request
         fetch(`/api/tournament/${deleteTournamentId.value}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
         })
             .then(response => {
                 if (!response.ok) {
