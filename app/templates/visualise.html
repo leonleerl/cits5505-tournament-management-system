@@ -103,7 +103,7 @@
                                 {% for tournament in tournaments %}
                                 <option value="{{ tournament.id }}">
                                     {{ tournament.name }} ({{ tournament.year }}){% if tournament.creator_id !=
-                                    current_user.id %} <span class="badge bg-info">Shared</span>{% endif %}
+                                    current_user.id %} <span class="badge bg-info">&#128225;</span>{% endif %}
                                 </option>
                                 {% endfor %}
                             </select>
