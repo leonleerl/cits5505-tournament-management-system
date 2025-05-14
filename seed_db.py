@@ -16,13 +16,20 @@ from app.models.models import (
 
 # Initialize Flask app (minimal configuration, just for database setup)
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI') or f'sqlite:///{os.path.abspath("db/cits5505.db")}'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.abspath("db/cits5505.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Check if database exists before proceeding
+if not (os.path.exists('cits5505.db') or os.path.exists('db/cits5505.db')):
+    print("Error: Database file not found. Please run recreate_db.py and app.py first.")
+    sys.exit(1)
 
 def create_seed_data():
     """Create and insert seed data into the database"""
     
+    # Clear existing data (if any)
+    # Note: Order matters due to foreign key constraints
     PlayerStats.query.delete()
     MatchScore.query.delete()
     Player.query.delete()
@@ -743,3 +750,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error creating seed data: {e}")
             sys.exit(1) 
+
