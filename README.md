@@ -1,8 +1,19 @@
-# 🏀 Fantasy Basketball
+# CITS5505 Project : 🏀 Fantasy Basketball
+
+## 🎯 Description
+
+**Fantasy Basketball** is a web-based platform designed to simplify basketball tournament management for coaches, players, and fans. It allows users to upload tournament data via Excel files, manage teams and matches, visualize performance statistics, and securely share access with others. Built using Flask and SQLAlchemy, the app provides an intuitive interface and powerful analytics for both casual and competitive leagues.
+
+## Group members
+| UWA ID | Name | GitHub Username |
+|:--------:|:------------:|:-----------:|
+| 24032869 | Amit Bhudiya | amitbhudiya |
+| 21211711 | Asad Maza    | asadmaza    |
+| 24169259 | Leon Li      | leonleerl   |
 
 ## 📘 Table of Contents
 
-- [Introduction](#-introduction)
+- [Description](#-description)
 - [Features](#-features)
 - [Pages and Views](#-pages-and-views)
 - [Design and Development](#-design-and-development)
@@ -14,11 +25,6 @@
 - [Project Structure](project-structure)
 - [Setup Instruction](#setup-instructions)
 
-
-## 🎯 Introduction
-
-**Fantasy Basketball** is a web-based platform designed to simplify basketball tournament management for coaches, players, and fans. It allows users to upload tournament data via Excel files, manage teams and matches, visualize performance statistics, and securely share access with others. Built using Flask and SQLAlchemy, the app provides an intuitive interface and powerful analytics for both casual and competitive leagues.
-
 ## 🚀 Features
 
 - ✅ User Authentication (Signup/Login/Logout)
@@ -29,25 +35,23 @@
 - 🔒 Role-based access control for shared data
 - 🧠 Intelligent leaderboard and win/loss summaries
 
-
 ## 🖥 Pages and Views
 
-### 1. `/` Home
+#### 1. `/` 
 - Displays leaderboard, upcoming matches, and recent results
 
-### 2. `/login` and `/signup`
+#### 2. `/login` and `/signup`
 - Forms for user authentication with server-side validation
 
-### 3. `/upload`
+#### 3. `/upload`
 - Authenticated upload of Excel files with tournament data 
 - Data validated and processed using pandas
 
-### 4. `/share`
+#### 4. `/share`
 - Share access to tournaments with other registered users
 
-### 5. `/visualise`
+#### 5. `/visualise`
 - Graphs, charts, and filters for data insights
-
 
 ## 🎨 Design and Development
 
@@ -56,7 +60,6 @@
 - **UX/UI**: Built using Bootstrap 5 and custom components
 - **Animations**: Floating icons, glow effects, interactive charts
 
-
 ## 🛠 Technology Stack
 
 - **Backend**: Python, Flask, Flask-SQLAlchemy, Flask-Login
@@ -64,22 +67,16 @@
 - **Database**: SQLite (test), SQLAlchemy ORM
 - **Testing**: `pytest`, `unittest`, `selenium`
 
-
 ## 🏗 Architecture (MVC)
 
 - **Models**: Users, Tournaments, Teams, Matches, Stats
 - **Views**: Jinja2 templates under `/templates`
 - **Controllers**: Flask blueprints in `auth_routes.py`, `main_routes.py`
 
-
 ## 📊 Data Management
 
 - **ER Diagram**:
-  - User ⬌ Tournament (creator_id)
-  - Tournament ⬌ Team ⬌ Player
-  - Tournament ⬌ Match ⬌ MatchScore
-  - Player ⬌ PlayerStats (per match)
-  - TournamentAccess for sharing
+
 
 
 ## ✅ Testing and Quality Assurance
@@ -91,7 +88,7 @@
 - **Test Database**:
   - Uses `SeleniumTestingConfig` with `sqlite:///testapp.db`
   - `db.create_all()` initializes schema
-  - 
+  
 ## 🔐 Security
 - Passwords hashed with Werkzeug
 - CSRF protection on all forms via `Flask-WTF`
@@ -117,13 +114,14 @@ app/
 │   ├── signup.html
 │   └── ...
 ├── forms/              # WTForms for all user inputs
+├── db/                 # Database
 app.py                  # Entry point
 requirements.txt        # Dependencies
 config.py               # Configurations
 tests/                  # Unit + Selenium tests
 ```
 
-## Setup Instructions
+## 🚀 Setup Instructions
 
 ### Setting up a Virtual Environment
 
@@ -171,6 +169,46 @@ tests/                  # Unit + Selenium tests
 
 3. Open your browser and navigate to http://127.0.0.1:5000
 
+## 🧪 Run tests
+
+To run tests for the application, follow these steps to run tests.
+
+### 1. Unittest
+
+**Install Unittest**
+
+`unittest` is a built-in Python module used for writing and running tests. It is included with Python, but if for some reason it is not installed, you can install it via pip:
+```
+pip install unittest
+```
+
+**Running Unittest**
+
+Open activate your virtual environment, then use the following command to run your unittests in your root folder:
+```
+python -m tests.unit
+```
+
+### 2. Selenium Testing
+
+**Install Selenium**
+
+Make sure you have Selenium installed:
+```
+pip install selenium
+```
+
+**Running Selenium Tests**
+
+
+Open your virtual enviournment and run this command in your root folder
+```
+python -m tests.selenium
+```
+This will  perform the actions defined in the `selenium.py`
+
+Test results will be displayed in the terminal window.
+
 ### Deactivating the Virtual Environment
 
-When you're done working on the project, you can deactivate the virtual environment:
+When you're done working on the project, you can deactivate the virtual environment.
