@@ -2057,3 +2057,68 @@ def delete_player_stats(player_id, match_id):
     db.session.commit()
     
     return jsonify({'message': 'Player statistics deleted successfully'})
+
+
+
+
+@main_bp.route('/api/users', methods=['GET'])
+@login_required
+def search_users():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify([])
+
+    # Search by username or email, case-insensitive
+    users = User.query.filter(
+        (User.username.ilike(f'%{q}%')) |
+        (User.email.ilike(f'%{q}%'))
+    ).filter(User.id != current_user.id).limit(10).all()
+
+    return jsonify([
+        {'id': u.id, 'username': u.username, 'email': u.email}
+        for u in users
+    ])
+
+
+
+@main_bp.route('/api/tournament/<int:tid>/access_list')
+@login_required
+def access_list(tid):
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    return jsonify([
+        {
+            'user_id': a.user.id,
+            'email': a.user.email,
+            'access_granted': a.access_granted.strftime('%Y-%m-%d'),
+            'id': a.id
+        }
+        for a in tournament.tournament_access
+    ])
+
+@main_bp.route('/api/tournament/<int:tid>/access', methods=['POST'])
+
+@login_required
+def grant_access(tid):
+    user_id = request.json.get('user_id')
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    if TournamentAccess.query.filter_by(tournament_id=tid, user_id=user_id).first():
+        return jsonify({'error': 'Already shared'}), 400
+    access = TournamentAccess(tournament_id=tid, user_id=user_id)
+    db.session.add(access)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@main_bp.route('/api/tournament/<int:tid>/access/<int:uid>', methods=['DELETE'])
+
+@login_required
+def revoke_access(tid, uid):
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    access = TournamentAccess.query.filter_by(tournament_id=tid, user_id=uid).first()
+
+    if not access:
+        return jsonify({'error': 'Access entry not found'}), 400
+
+    db.session.delete(access)
+    db.session.commit()
+    return jsonify({'success': True})
+
