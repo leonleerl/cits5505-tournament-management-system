@@ -994,7 +994,7 @@ function exportToPDF() {
     const creatorId = selectedOption.dataset.creatorId;
     const creatorName = selectedOption.dataset.creator || 'Unknown';
     const isShared = creatorId && parseInt(creatorId) !== CURRENT_USER_ID;
-    const creatorDisplay = isShared ? `${creatorName} (shared)` : 'You';
+    const creatorDisplay = isShared ? `${creatorName} (shared)` : `${creatorName}`;
 
     const teams = document.getElementById('teamsCount')?.textContent || '-';
     const players = document.getElementById('playersCount')?.textContent || '-';
