@@ -18,6 +18,13 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
     
+class SeleniumTestingConfig(Config):
+    TESTING = True
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.abspath("tests/testapp.db")}'
+    WTF_CSRF_ENABLED = False
+    SERVER_NAME = 'localhost:5000'
+    
 class ProductionConfig(Config):
     DEBUG = False
     USE_RELOADER = False
@@ -28,6 +35,7 @@ class ProductionConfig(Config):
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
+    'selenium_testing': SeleniumTestingConfig,
     'production': ProductionConfig,
     'default': DevelopmentConfig 
 }
