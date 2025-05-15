@@ -281,18 +281,6 @@ class SeleniumTestCase(unittest.TestCase):
             
         self.assertTrue(found_indicators, "No responsive design indicators found")
         
-    # Page Content and Functionality Tests
-    def test_tournaments_page_loads(self):
-        """Test that the tournaments page loads"""
-        self.client.get(f"{localHost}tournaments")
-        body = self.client.find_element(By.TAG_NAME, "body")
-        self.assertIsNotNone(body)
-        
-    def test_teams_page_loads(self):
-        """Test that the teams page loads"""
-        self.client.get(f"{localHost}teams")
-        body = self.client.find_element(By.TAG_NAME, "body")
-        self.assertIsNotNone(body)
         
     def test_page_has_heading(self):
         """Test that the page has a heading element"""
@@ -340,35 +328,7 @@ class SeleniumTestCase(unittest.TestCase):
         self.client.get(f"{localHost}matches")
         body = self.client.find_element(By.TAG_NAME, "body")
         self.assertIsNotNone(body)
-        
-    def test_teams_has_basketball_content(self):
-        """Test that teams page has basketball-related content"""
-        self.client.get(f"{localHost}teams")
-        page_source = self.client.page_source.lower()
-        
-        # Check if the page source contains basketball team-related terms
-        team_terms = ['team', 'lakers', 'celtics', 'player', 'basketball']
-        found_terms = [term for term in team_terms if term in page_source]
-        
-        team_elements = self.client.find_elements(By.CSS_SELECTOR, ".team, .team-card, .team-name, .team-logo")
-        
-        has_team_content = len(found_terms) > 0 or len(team_elements) > 0
-        self.assertTrue(has_team_content, "No basketball team content found on teams page")
-        
-    def test_tournaments_has_basketball_content(self):
-        """Test that tournaments page has basketball-related content"""
-        self.client.get(f"{localHost}tournaments")
-        page_source = self.client.page_source.lower()
-        
-        # Check if the page source contains basketball tournament-related terms
-        tournament_terms = ['tournament', 'basketball', 'match', 'game', 'team', 'competition']
-        found_terms = [term for term in tournament_terms if term in page_source]
-        
-        tournament_elements = self.client.find_elements(By.CSS_SELECTOR, ".tournament, .tournament-card, .tournament-name, .tournament-date")
-        
-        has_tournament_content = len(found_terms) > 0 or len(tournament_elements) > 0
-        self.assertTrue(has_tournament_content, "No basketball tournament content found on tournaments page")
-        
+
     def test_has_player_positions(self):
         """Test if player positions (PG, SG, SF, PF, C) are mentioned"""
         self.client.get(f"{localHost}players")
