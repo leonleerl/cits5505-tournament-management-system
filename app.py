@@ -8,6 +8,7 @@ from app.models.database import db
 from app.routes.main_routes import main_bp
 from app.routes.auth_routes import auth_bp
 from flask_login import LoginManager
+import subprocess
 from config import config
 
 # Function to clean up __pycache__ directories
@@ -57,7 +58,6 @@ def create_app(config_name='default'):
     print("Initializing extensions...")
     db.init_app(app)
     csrf.init_app(app)
-      # 🔧 Temporary fix for packages expecting this attribute
     
     # Register blueprints
     print("Importing blueprints...")
