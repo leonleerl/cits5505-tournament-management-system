@@ -1,356 +1,90 @@
-{% extends "base.html" %}
+{% extends "base.html" %}  
 
-{% block title %}Share Data - 🏀 Fantasy Basketball{% endblock %}
+{% block content %} 
+<div class="container mt-5">   
+  <h2 class="mb-4">Share Tournament</h2>    
+  
+  <div class="row">     
+    <!-- Tournament Selector -->     
+    <div class="col-md-4">       
+      <h5>Select a Tournament</h5>       
+      <div class="list-group" id="shareTabsContent">         
+        {% for tournament in tournaments %}           
+          <button type="button" class="list-group-item list-group-item-action {% if loop.first %}active{% endif %}"                   
+                  data-id="{{ tournament.id }}">             
+            {{ tournament.name }}           
+          </button>         
+        {% endfor %}       
+      </div>     
+    </div>      
+    
+    <!-- Sharing Panel -->     
+    <div class="col-md-8">       
+      <div class="card">         
+        <div class="card-header">           
+          Share Settings         
+        </div>         
+        <div class="card-body">           
+          <!-- Current Shares -->           
+          <div class="mb-4">             
+            <h5>Current Shares</h5>             
+            <table class="table" id="currentSharesTable">               
+              <thead>                 
+                <tr>                   
+                  <th>User</th>                   
+                  <th>Access</th>                   
+                  <th>Shared On</th>                   
+                  <th>Action</th>                 
+                </tr>               
+              </thead>               
+              <tbody>                 
+                <!-- Filled by JS -->               
+              </tbody>             
+            </table>           
+          </div>            
+          
+          <!-- User Search -->           
+          <div class="mb-4">             
+            <h5>Share With User</h5>             
+            <div class="input-group mb-2">               
+              <input type="text" class="form-control" id="userSearchInput" placeholder="Username or email…">               
+              <button class="btn btn-primary" id="userSearchBtn">                 
+                <i class="fas fa-search"></i>               
+              </button>             
+            </div>             
+            <ul class="list-group" id="userSearchResults">               
+              <!-- Filled by JS -->             
+            </ul>           
+          </div>         
+        </div>       
+      </div>     
+    </div>   
+  </div> 
+</div> 
 
-{% block content %}
-<!-- Share Data Section -->
-<section class="py-5">
-    <div class="container">
-        <h1 class="mb-4">Share Tournament Data</h1>
-        <div class="row">
-            <!-- Data Selection Sidebar -->
-            <div class="col-md-4 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">My Data</h4>
-                    </div>
-                    <div class="card-body">
-                        <ul class="nav nav-pills flex-column mb-3" id="shareTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="tournaments-tab" data-bs-toggle="pill" data-bs-target="#tournaments" type="button" role="tab">My Tournaments</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="teams-tab" data-bs-toggle="pill" data-bs-target="#teams" type="button" role="tab">My Teams</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="players-tab" data-bs-toggle="pill" data-bs-target="#players" type="button" role="tab">My Players</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="statistics-tab" data-bs-toggle="pill" data-bs-target="#statistics" type="button" role="tab">My Statistics</button>
-                            </li>
-                        </ul>
-                        
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Search my data..." id="dataSearchInput">
-                            <button class="btn btn-outline-secondary" type="button">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="tab-content" id="shareTabsContent">
-                            <!-- Tournaments List -->
-                            <div class="tab-pane fade show active" id="tournaments" role="tabpanel">
-                                <div class="list-group">
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center active" data-id="1" data-type="tournaments" data-name="Summer League 2023">
-                                        Summer League 2023
-                                        <span class="badge bg-primary rounded-pill">3 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="2" data-type="tournaments" data-name="Winter Championship">
-                                        Winter Championship
-                                        <span class="badge bg-primary rounded-pill">1 share</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="3" data-type="tournaments" data-name="College Playoffs">
-                                        College Playoffs
-                                        <span class="badge bg-secondary rounded-pill">0 shares</span>
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <!-- Teams List -->
-                            <div class="tab-pane fade" id="teams" role="tabpanel">
-                                <div class="list-group">
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="1" data-type="teams" data-name="Lakers">
-                                        Lakers
-                                        <span class="badge bg-primary rounded-pill">2 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="2" data-type="teams" data-name="Bulls">
-                                        Bulls
-                                        <span class="badge bg-secondary rounded-pill">0 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="3" data-type="teams" data-name="Celtics">
-                                        Celtics
-                                        <span class="badge bg-primary rounded-pill">1 share</span>
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <!-- Players List -->
-                            <div class="tab-pane fade" id="players" role="tabpanel">
-                                <div class="list-group">
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="1" data-type="players" data-name="Michael Johnson">
-                                        Michael Johnson
-                                        <span class="badge bg-primary rounded-pill">2 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="2" data-type="players" data-name="James Williams">
-                                        James Williams
-                                        <span class="badge bg-secondary rounded-pill">0 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="3" data-type="players" data-name="Robert Davis">
-                                        Robert Davis
-                                        <span class="badge bg-primary rounded-pill">1 share</span>
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <!-- Statistics List -->
-                            <div class="tab-pane fade" id="statistics" role="tabpanel">
-                                <div class="list-group">
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="1" data-type="statistics" data-name="Scoring Leaders 2023">
-                                        Scoring Leaders 2023
-                                        <span class="badge bg-primary rounded-pill">5 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="2" data-type="statistics" data-name="Team Performance Analysis">
-                                        Team Performance Analysis
-                                        <span class="badge bg-primary rounded-pill">3 shares</span>
-                                    </a>
-                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-id="3" data-type="statistics" data-name="Player Efficiency Ratings">
-                                        Player Efficiency Ratings
-                                        <span class="badge bg-secondary rounded-pill">0 shares</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Share Settings Panel -->
-            <div class="col-md-8">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Share Settings: Summer League 2023</h4>
-                    </div>
-                    <div class="card-body">
-                        <!-- Current Shares -->
-                        <div class="mb-4">
-                            <h5>Current Shares</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>User</th>
-                                            <th>Access Level</th>
-                                            <th>Shared On</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                        <span>JD</span>
-                                                    </div>
-                                                    <span>john.doe@example.com</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success">View & Edit</span>
-                                            </td>
-                                            <td>Apr 23, 2023</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-secondary edit-share-btn" data-share-id="1">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger delete-share-btn" data-share-id="1">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                        <span>SB</span>
-                                                    </div>
-                                                    <span>sarah.brown@example.com</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info">View Only</span>
-                                            </td>
-                                            <td>May 10, 2023</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-secondary edit-share-btn" data-share-id="2">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger delete-share-btn" data-share-id="2">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                        <span>MJ</span>
-                                                    </div>
-                                                    <span>mike.johnson@example.com</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info">View Only</span>
-                                            </td>
-                                            <td>Jun 15, 2023</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-secondary edit-share-btn" data-share-id="3">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger delete-share-btn" data-share-id="3">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Share with New User -->
-                        <div>
-                            <h5>Share with New Users</h5>
-                            <form id="shareForm">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                <div class="mb-3">
-                                    <label for="userSearch" class="form-label">Search Users</label>
-                                    <input type="text" class="form-control" id="userSearch" placeholder="Enter email or username">
-                                </div>
-                                
-                                <div class="mb-3" id="userResults">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="user1" value="1">
-                                        <label class="form-check-label d-flex align-items-center" for="user1">
-                                            <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                <span>RW</span>
-                                            </div>
-                                            <span>robert.wilson@example.com</span>
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="user2" value="2">
-                                        <label class="form-check-label d-flex align-items-center" for="user2">
-                                            <div class="bg-secondary text-white rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                                                <span>EM</span>
-                                            </div>
-                                            <span>emily.mitchell@example.com</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="accessLevel" class="form-label">Access Level</label>
-                                    <select class="form-select" id="accessLevel">
-                                        <option value="view">View Only</option>
-                                        <option value="edit">View & Edit</option>
-                                        <option value="admin">Full Access</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="expiryDate" class="form-label">Access Expiry (Optional)</label>
-                                    <input type="date" class="form-control" id="expiryDate">
-                                </div>
-                                
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="notifyUsers" checked>
-                                    <label class="form-check-label" for="notifyUsers">
-                                        Notify users via email
-                                    </label>
-                                </div>
-                                
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-secondary me-2">Cancel</button>
-                                    <button type="submit" class="btn btn-primary">Share</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:9999;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background-color:white; padding:20px; border-radius:5px;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
-</section>
-{% endblock %}
+    <p class="mt-2 mb-0">Processing...</p>
+  </div>
+</div>
 
-{% block extra_js %}
-<script>
-    // Add JavaScript for share functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Handle list group selection
-        const listItems = document.querySelectorAll('.list-group-item');
-        listItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Clear active class from all items
-                listItems.forEach(i => i.classList.remove('active'));
-                // Add active class to clicked item
-                this.classList.add('active');
-                
-                // Update share settings header with selected item name
-                const itemName = this.getAttribute('data-name');
-                const headerTitle = document.querySelector('.card-header h4');
-                headerTitle.textContent = 'Share Settings: ' + itemName;
-            });
-        });
-        
-        // Handle edit share buttons
-        const editButtons = document.querySelectorAll('.edit-share-btn');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const shareId = this.getAttribute('data-share-id');
-                alert('Edit share with ID: ' + shareId);
-            });
-        });
-        
-        // Handle delete share buttons
-        const deleteButtons = document.querySelectorAll('.delete-share-btn');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const shareId = this.getAttribute('data-share-id');
-                if (confirm('Are you sure you want to remove this share?')) {
-                    alert('Share with ID: ' + shareId + ' would be deleted');
-                }
-            });
-        });
-        
-        // Handle share form submission
-        const shareForm = document.getElementById('shareForm');
-        if (shareForm) {
-            shareForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Get selected users
-                const selectedUsers = [];
-                document.querySelectorAll('#userResults input[type="checkbox"]:checked').forEach(checkbox => {
-                    selectedUsers.push(checkbox.value);
-                });
-                
-                if (selectedUsers.length === 0) {
-                    alert('Please select at least one user to share with');
-                    return;
-                }
-                
-                // Get other form values
-                const accessLevel = document.getElementById('accessLevel').value;
-                const expiryDate = document.getElementById('expiryDate').value;
-                const notifyUsers = document.getElementById('notifyUsers').checked;
-                
-                // In a real app, you would send this data to the server
-                console.log('Sharing with users:', selectedUsers);
-                console.log('Access level:', accessLevel);
-                console.log('Expiry date:', expiryDate);
-                console.log('Notify users:', notifyUsers);
-                
-                alert('Sharing settings would be saved');
-            });
-        }
-    });
-</script>
+<!-- Notification Toast -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index:9999;">
+  <div id="notification" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="notificationMessage">
+        This is a notification message.
+      </div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}  
+
+{% block extra_js %}   
+  <script src="{{ url_for('static', filename='js/share.js') }}"></script> 
 {% endblock %}
