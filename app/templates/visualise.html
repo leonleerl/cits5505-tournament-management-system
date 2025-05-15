@@ -101,9 +101,11 @@
                             <select class="form-select" id="tournamentSelect">
                                 <option value="all">All Tournaments</option>
                                 {% for tournament in tournaments %}
-                                <option value="{{ tournament.id }}">
+                                <option value="{{ tournament.id }}" data-creator-id="{{ tournament.creator_id }}"
+                                    data-creator="{{ tournament.creator.username }}" data-year="{{ tournament.year }}">
                                     {{ tournament.name }} ({{ tournament.year }}){% if tournament.creator_id !=
-                                    current_user.id %} <span class="badge bg-info">&#128225;</span>{% endif %}
+                                    current_user.id %} <span class="badge badge-primary bg-info">(Shared)</span>{% endif
+                                    %}
                                 </option>
                                 {% endfor %}
                             </select>

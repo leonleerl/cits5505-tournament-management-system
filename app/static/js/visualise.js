@@ -367,8 +367,8 @@ function updateTournamentTitle() {
 
     if (tournamentSelect.value !== 'all') {
         const selectedOption = tournamentSelect.options[tournamentSelect.selectedIndex];
-        const isShared = parseInt(selectedOption.dataset.creator) !== CURRENT_USER_ID;
-        title = `Tournament Summary: ${selectedOption.text}${isShared ? ' (Shared)' : ''}`;
+        const isShared = parseInt(selectedOption.dataset.creatorId) !== CURRENT_USER_ID;
+        title = `Tournament Summary: ${selectedOption.text}${isShared ? '' : ''}`;
     }
 
     console.log("Updating tournament title to:", title);
@@ -987,35 +987,64 @@ function exportToPDF() {
     const doc = new jsPDF('landscape', 'mm', 'a4');
     const chartContainers = document.querySelectorAll('.chart-container');
     const tournamentSelect = document.getElementById('tournamentSelect');
-    let title = 'Tournament Visualisation Report';
-    if (tournamentSelect.value !== 'all') {
-        title += ': ' + tournamentSelect.options[tournamentSelect.selectedIndex].text;
-    }
+    const selectedOption = tournamentSelect.options[tournamentSelect.selectedIndex];
 
-    doc.setFontSize(20);
-    doc.text(title, 20, 20);
+    // Extract tournament info
+    const tournamentName = selectedOption.text;
+    const creatorId = selectedOption.dataset.creatorId;
+    const creatorName = selectedOption.dataset.creator || 'Unknown';
+    const isShared = creatorId && parseInt(creatorId) !== CURRENT_USER_ID;
+    const creatorDisplay = isShared ? `${creatorName} (shared)` : `${creatorName}`;
+
+    const teams = document.getElementById('teamsCount')?.textContent || '-';
+    const players = document.getElementById('playersCount')?.textContent || '-';
+    const matches = document.getElementById('matchesCount')?.textContent || '-';
+    const avgPoints = document.getElementById('avgPointsPerGame')?.textContent || '-';
+
+    // Header
+    doc.setFontSize(18);
+    doc.text(`Tournament: ${tournamentName}`, 20, 20);
     doc.setFontSize(12);
-    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
+    doc.text(`Creator: ${creatorDisplay}`, 20, 28);
+    doc.text(`Teams: ${teams} | Players: ${players}`, 20, 34);
+    doc.text(`Matches Played: ${matches} | Avg Points/Game: ${avgPoints}`, 20, 40);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 46);
 
-    let yPosition = 40;
+    // Divider
+    doc.setLineWidth(0.3);
+    doc.line(20, 55, 280, 55);
+
+    let yPosition = 62;
     let processedCharts = 0;
     const totalCharts = chartContainers.length;
 
     const captureChart = (container, index) => {
         html2canvas(container, { scale: 2 }).then(canvas => {
-            const imgWidth = 260;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            try {
+                const imgWidth = 260;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-            if (index > 0 && (yPosition + imgHeight > 190)) {
-                doc.addPage();
-                yPosition = 20;
-                console.log("Added new page to PDF");
+                if (index > 0 && (yPosition + imgHeight > 190)) {
+                    doc.addPage();
+                    yPosition = 20;
+                    console.log("Added new page to PDF");
+                }
+
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
+                yPosition += imgHeight + 10;
+            } catch (e) {
+                console.error(`Failed to add chart ${index} to PDF:`, e);
             }
 
-            const imgData = canvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
-            yPosition += imgHeight + 10;
-
+            processedCharts++;
+            if (processedCharts === totalCharts) {
+                const filename = `tournament_visualisation_${Date.now()}.pdf`;
+                doc.save(filename);
+                hideLoading();
+            }
+        }).catch(error => {
+            console.error(`Error rendering chart ${index}:`, error);
             processedCharts++;
             if (processedCharts === totalCharts) {
                 const filename = `tournament_visualisation_${Date.now()}.pdf`;
@@ -1031,3 +1060,4 @@ function exportToPDF() {
         });
     }, 500);
 }
+
