@@ -532,14 +532,6 @@
     line-height: 1.6;
 }
 
-.testimonial-card .use-case {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: #555;
-}
-
 /* Team Logo Shapes */
 .team-logo {
     width: 40px;
@@ -614,6 +606,26 @@
 
 .match-item:hover {
     background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Match team columns */
+.match-team-column {
+    width: 40%;
+    padding: 0 10px;
+}
+
+.team-name {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.team-score {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
 }
 
 .vs {
@@ -726,11 +738,6 @@
 }
 
 /* Match Cards */
-.team-score {
-    font-size: 2rem;
-    font-weight: bold;
-}
-
 .match-score-display {
     display: flex;
     align-items: center;

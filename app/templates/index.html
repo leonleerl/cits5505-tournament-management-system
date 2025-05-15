@@ -84,10 +84,7 @@
                         <i class="fas fa-user-tie"></i>
                     </div>
                     <h4>Basketball Coach</h4>
-                    <p class="quote">"This platform allows me to upload all my tournament data using Excel templates, saving me hours of manual entry. The statistical analysis helps me make better coaching decisions."</p>
-                    <div class="use-case">
-                        <strong>Use Case:</strong> Uploads tournament data via Excel, visualizes team statistics, and shares insights with assistant coaches.
-                    </div>
+                    <p class="quote">"This Fantasy Basketball platform allows me to organize competitions, manage team registrations, and track real-time statistics. It has streamlined our entire league operations and made my job much easier."</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -96,10 +93,7 @@
                         <i class="fas fa-running"></i>
                     </div>
                     <h4>Team Captain</h4>
-                    <p class="quote">"I can easily track our team's performance across multiple tournaments. The performance visualization helps us identify strengths and areas for improvement."</p>
-                    <div class="use-case">
-                        <strong>Use Case:</strong> Monitors team statistics, analyzes performance trends, and shares results with teammates.
-                    </div>
+                    <p class="quote">"I use this platform to register my team for tournaments, check our upcoming matches, and analyze our performance history. The detailed statistics help us develop better strategies against our opponents."</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -108,10 +102,7 @@
                         <i class="fas fa-binoculars"></i>
                     </div>
                     <h4>Basketball Enthusiast</h4>
-                    <p class="quote">"As a fan, I love being able to follow all the latest scores and upcoming matches. The leaderboard lets me see how my favorite teams are performing at a glance."</p>
-                    <div class="use-case">
-                        <strong>Use Case:</strong> Follows favorite teams, gets notified about upcoming matches, and shares exciting results with friends.
-                    </div>
+                    <p class="quote">"As a basketball fan, I can easily follow tournament brackets, check live scores, and see team rankings in real-time. I love being able to share tournament highlights and brackets with my friends on social media."</p>
                 </div>
             </div>
         </div>
@@ -286,35 +277,35 @@
                 <div class="card-body p-0">
                     {% for match in recent_matches %}
                     <div class="match-item p-4 {% if not loop.last %}border-bottom{% endif %}">
-                        <div class="row align-items-center p-2">
+                        <div class="row align-items-center">
                             <div class="col-md-9">
-                                <div class="d-flex align-items-center flex-wrap">
+                                <div class="d-flex align-items-center justify-content-center">
                                     {% set team1_wins = match.score and match.score.team1_score > match.score.team2_score %}
                                     {% set team2_wins = match.score and match.score.team2_score > match.score.team1_score %}
                                     
-                                    <div class="text-center me-3 me-md-4">
+                                    <div class="text-center match-team-column">
                                         <div class="team-logo team-logo-{{ match.team1.logo_shape_type }} team-logo-styled mx-auto mb-2"
                                              data-primary-color="{{ match.team1.primary_color }}"
                                              data-secondary-color="{{ match.team1.secondary_color }}">
                                             {{ match.team1.name[:2] }}
                                         </div>
-                                        <span class="d-block mb-1">{{ match.team1.name }}</span>
+                                        <span class="d-block mb-2 team-name">{{ match.team1.name }}</span>
                                         <span class="team-score {% if team1_wins %}text-success{% else %}text-danger{% endif %}">
                                             {{ match.score.team1_score if match.score else '0' }}
                                         </span>
                                     </div>
                                     
-                                    <div class="mx-2 mx-md-3 d-none d-sm-block">
+                                    <div class="mx-4 text-center">
                                         <div class="vs fs-4">vs</div>
                                     </div>
                                     
-                                    <div class="text-center ms-3 ms-md-4">
+                                    <div class="text-center match-team-column">
                                         <div class="team-logo team-logo-{{ match.team2.logo_shape_type }} team-logo-styled mx-auto mb-2"
                                              data-primary-color="{{ match.team2.primary_color }}"
                                              data-secondary-color="{{ match.team2.secondary_color }}">
                                             {{ match.team2.name[:2] }}
                                         </div>
-                                        <span class="d-block mb-1">{{ match.team2.name }}</span>
+                                        <span class="d-block mb-2 team-name">{{ match.team2.name }}</span>
                                         <span class="team-score {% if team2_wins %}text-success{% else %}text-danger{% endif %}">
                                             {{ match.score.team2_score if match.score else '0' }}
                                         </span>
@@ -322,7 +313,7 @@
                                 </div>
                             </div>
                             
-                            <div class="col-md-3 text-md-center mt-3 mt-md-0">
+                            <div class="col-md-3 text-md-center">
                                 <div class="match-date mb-2">
                                     <i class="far fa-calendar-alt me-2 text-primary"></i>
                                     {{ match.match_date.strftime('%b %d, %Y') }}
