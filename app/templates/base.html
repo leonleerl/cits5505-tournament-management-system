@@ -12,7 +12,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body  data-user-id="{{ current_user.id }}">
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
         <div class="container">
@@ -35,7 +35,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.upload' %}active{% endif %}"
-                            href="{{ url_for('main.upload') }}">Upload Tournament</a>
+                            href="{{ url_for('main.upload') }}">Tournament Management</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.share' %}active{% endif %}"

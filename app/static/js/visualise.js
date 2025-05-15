@@ -135,7 +135,7 @@ function hideLoading() {
         console.log("Loading spinner hidden");
     }
 }
-
+const CURRENT_USER_ID = parseInt(document.body.dataset.userId);
 // Populate team dropdown based on selected tournament
 function populateTeamDropdown() {
     const tournamentId = document.getElementById('tournamentSelect').value;
@@ -364,12 +364,13 @@ function loadVisualisationData() {
 function updateTournamentTitle() {
     const tournamentSelect = document.getElementById('tournamentSelect');
     let title = 'Tournament Summary';
-    
+
     if (tournamentSelect.value !== 'all') {
         const selectedOption = tournamentSelect.options[tournamentSelect.selectedIndex];
-        title = `Tournament Summary: ${selectedOption.text}`;
+        const isShared = parseInt(selectedOption.dataset.creator) !== CURRENT_USER_ID;
+        title = `Tournament Summary: ${selectedOption.text}${isShared ? ' (Shared)' : ''}`;
     }
-    
+
     console.log("Updating tournament title to:", title);
     document.querySelector('.tournament-title').textContent = title;
 }
@@ -972,85 +973,59 @@ function updateTeamRecordsTable(teamRecords) {
     }
 }
 
-// Export visualisations to PDF
 function exportToPDF() {
     console.log("Starting PDF export process");
-    // Show loading spinner
     showLoading();
-    
-    // Import jsPDF and html2canvas
+
     const { jsPDF } = window.jspdf;
-    
     if (!jsPDF) {
         console.error("jsPDF not available");
         hideLoading();
         return;
     }
-    
-    // Create a new PDF document
+
     const doc = new jsPDF('landscape', 'mm', 'a4');
-    
-    // Get all chart containers
     const chartContainers = document.querySelectorAll('.chart-container');
-    console.log("Found", chartContainers.length, "chart containers for PDF export");
-    
-    // Add title to PDF
     const tournamentSelect = document.getElementById('tournamentSelect');
     let title = 'Tournament Visualisation Report';
     if (tournamentSelect.value !== 'all') {
         title += ': ' + tournamentSelect.options[tournamentSelect.selectedIndex].text;
     }
-    
+
     doc.setFontSize(20);
     doc.text(title, 20, 20);
     doc.setFontSize(12);
-    doc.text('Generated on: ' + new Date().toLocaleDateString(), 20, 30);
-    
-    // Set initial y position
+    doc.text('Generated on: ' + new Date().toLocaleString(), 20, 30);
+
     let yPosition = 40;
-    
-    // Process each chart container
     let processedCharts = 0;
     const totalCharts = chartContainers.length;
-    
-    // Function to capture and add a chart to the PDF
+
     const captureChart = (container, index) => {
-        console.log(`Capturing chart ${index + 1} of ${totalCharts}`);
         html2canvas(container, { scale: 2 }).then(canvas => {
-            // Calculate width and height (keeping aspect ratio)
             const imgWidth = 260;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // Add a new page if necessary
+
             if (index > 0 && (yPosition + imgHeight > 190)) {
                 doc.addPage();
                 yPosition = 20;
                 console.log("Added new page to PDF");
             }
-            
-            // Add the chart image to the PDF
+
             const imgData = canvas.toDataURL('image/png');
             doc.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
-            console.log(`Added chart ${index + 1} to PDF`);
-            
-            // Update y position for next chart
             yPosition += imgHeight + 10;
-            
-            // Increment the processed charts counter
+
             processedCharts++;
-            
-            // Save the PDF when all charts are processed
             if (processedCharts === totalCharts) {
-                console.log("All charts processed, saving PDF");
-                doc.save('tournament_visualisation.pdf');
+                const filename = `tournament_visualisation_${Date.now()}.pdf`;
+                doc.save(filename);
                 hideLoading();
             }
         });
     };
-    
-    // Start capturing charts with a small delay to allow them to render
+
     setTimeout(() => {
-        console.log("Starting chart capture for PDF");
         chartContainers.forEach((container, index) => {
             captureChart(container, index);
         });

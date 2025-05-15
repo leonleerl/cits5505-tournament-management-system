@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import re
 from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, ChatMessage, TournamentAccess, db
-from app.forms.forms import TournamentUploadForm
+from app.forms.forms import (TournamentUploadForm, TournamentDetailsForm, TeamForm, PlayerForm, MatchForm, DeleteConfirmForm)
 
 # Create blueprint
 main_bp = Blueprint('main', __name__)
@@ -449,7 +449,7 @@ def upload():
                 
                 db.session.commit()
                 flash('Tournament uploaded successfully!', 'success')
-                return redirect(url_for('main.index'))
+                return redirect(url_for('main.upload', success=True))
             
             except Exception as e:
                 db.session.rollback()
@@ -1015,8 +1015,8 @@ def get_player_stats():
         avg_blocks = sum(stat.blocks for stat in player_stats) / total_games
         avg_three_pointers = sum(stat.three_pointers for stat in player_stats) / total_games
         
-        # You could calculate league averages from all players, but using fixed values for simplicity
-        # These could be calculated dynamically based on all player stats in the future
+        # Calculate league averages from all players, but using fixed values for simplicity
+        # Could be calculated dynamically based on all player stats in the future
         league_avg_points = 15.7
         league_avg_rebounds = 5.2
         league_avg_assists = 4.3
@@ -1049,3 +1049,1076 @@ def get_player_stats():
     except Exception as e:
         print(f"Error in get_player_stats: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+# tournament_editor: Tournament Management Routes
+
+
+@main_bp.route('/tournament-editor')
+@login_required
+def tournament_editor():
+    """Route for the tournament editor interface with WTForms"""
+    # Initialize all forms
+    tournament_form = TournamentDetailsForm()
+    team_form = TeamForm()
+    player_form = PlayerForm()
+    match_form = MatchForm()
+    delete_form = DeleteConfirmForm()
+    
+    # The team and player select fields need their choices populated dynamically
+    # in JavaScript, so we don't need to set them here
+    
+    return render_template('tournament_editor.html',
+                          tournament_form=tournament_form,
+                          team_form=team_form,
+                          player_form=player_form,
+                          match_form=match_form,
+                          delete_form=delete_form)
+
+# API Endpoints for Tournament Management
+
+# Tournament endpoints
+@main_bp.route('/api/tournaments', methods=['GET'])
+@login_required
+def get_tournaments():
+    """Get tournaments created by the current user with optional search"""
+    search_query = request.args.get('q', '')
+    
+    query = Tournament.query.filter_by(creator_id=current_user.id)
+    
+    if search_query:
+        search_term = f"%{search_query}%"
+        query = query.filter(
+            db.or_(
+                Tournament.name.ilike(search_term),
+                Tournament.description.ilike(search_term),
+                Tournament.year.cast(db.String).ilike(search_term)
+            )
+        )
+    
+    tournaments = query.order_by(Tournament.year.desc(), Tournament.name).all()
+    
+    result = []
+    for tournament in tournaments:
+        # Count teams and matches for the tournament
+        teams_count = Team.query.filter_by(tournament_id=tournament.id).count()
+        matches_count = Match.query.filter_by(tournament_id=tournament.id).count()
+        
+        result.append({
+            'id': tournament.id,
+            'name': tournament.name,
+            'description': tournament.description or '',
+            'year': tournament.year,
+            'start_date': tournament.start_date.isoformat() if tournament.start_date else None,
+            'end_date': tournament.end_date.isoformat() if tournament.end_date else None,
+            'teams_count': teams_count,
+            'matches_count': matches_count
+        })
+    
+    return jsonify(result)
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['GET'])
+@login_required
+def get_tournament(tournament_id):
+    """Get details for a specific tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    result = {
+        'id': tournament.id,
+        'name': tournament.name,
+        'description': tournament.description or '',
+        'year': tournament.year,
+        'start_date': tournament.start_date.isoformat() if tournament.start_date else None,
+        'end_date': tournament.end_date.isoformat() if tournament.end_date else None
+    }
+    
+    return jsonify(result)
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['PUT'])
+@login_required
+def update_tournament(tournament_id):
+    """Update tournament details"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    tournament.name = data.get('name', tournament.name)
+    tournament.description = data.get('description', tournament.description)
+    tournament.year = data.get('year', tournament.year)
+    
+    if 'start_date' in data and data['start_date']:
+        start_date = datetime.fromisoformat(data['start_date'])
+        tournament.start_date = start_date.date()
+    
+    if 'end_date' in data and data['end_date']:
+        end_date = datetime.fromisoformat(data['end_date'])
+        tournament.end_date = end_date.date()
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Tournament updated successfully'})
+
+@main_bp.route('/api/tournament/<int:tournament_id>', methods=['DELETE'])
+@login_required
+def delete_tournament(tournament_id):
+    """Delete a tournament and all associated data"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Use a transaction to ensure all-or-nothing deletion
+    try:
+        db.session.begin_nested()
+        
+        # Delete associated data in correct order (respecting foreign key constraints)
+        
+        # 1. Delete player stats
+        player_ids = db.session.query(Player.id).filter(Player.team_id.in_(
+            db.session.query(Team.id).filter_by(tournament_id=tournament_id)
+        )).all()
+        player_ids = [pid[0] for pid in player_ids]
+        
+        match_ids = db.session.query(Match.id).filter_by(tournament_id=tournament_id).all()
+        match_ids = [mid[0] for mid in match_ids]
+        
+        PlayerStats.query.filter(
+            db.and_(
+                PlayerStats.player_id.in_(player_ids),
+                PlayerStats.match_id.in_(match_ids)
+            )
+        ).delete(synchronize_session=False)
+        
+        # 2. Delete match scores
+        MatchScore.query.filter(MatchScore.match_id.in_(match_ids)).delete(synchronize_session=False)
+        
+        # 3. Delete matches
+        Match.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 4. Delete players
+        Player.query.filter(Player.team_id.in_(
+            db.session.query(Team.id).filter_by(tournament_id=tournament_id)
+        )).delete(synchronize_session=False)
+        
+        # 5. Delete teams
+        Team.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 6. Delete tournament access
+        TournamentAccess.query.filter_by(tournament_id=tournament_id).delete(synchronize_session=False)
+        
+        # 7. Delete the tournament
+        db.session.delete(tournament)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Tournament deleted successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in delete_tournament: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Team Management Endpoints
+@main_bp.route('/api/tournament/<int:tournament_id>/teams', methods=['GET'])
+@login_required
+def get_teams_for_tournament(tournament_id):
+    """Get all teams for a tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    teams = Team.query.filter_by(tournament_id=tournament_id).all()
+    
+    result = []
+    for team in teams:
+        result.append({
+            'id': team.id,
+            'name': team.name,
+            'created_year': team.created_year,
+            'logo_shape_type': team.logo_shape_type,
+            'primary_color': team.primary_color,
+            'secondary_color': team.secondary_color,
+            'wins': team.wins,
+            'losses': team.losses,
+            'points': team.points
+        })
+    
+    return jsonify(result)
+
+@main_bp.route('/api/tournament/<int:tournament_id>/teams', methods=['POST'])
+@login_required
+def create_team(tournament_id):
+    """Create a new team in a tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    if not data.get('name'):
+        return jsonify({'error': 'Team name is required'}), 400
+    
+    team = Team(
+        name=data.get('name'),
+        created_year=data.get('created_year'),
+        logo_shape_type=data.get('logo_shape_type', 1),
+        primary_color=data.get('primary_color', '#000000'),
+        secondary_color=data.get('secondary_color', '#FFFFFF'),
+        wins=data.get('wins', 0),
+        losses=data.get('losses', 0),
+        points=data.get('points', 0),
+        creator_id=current_user.id,
+        tournament_id=tournament_id
+    )
+    
+    db.session.add(team)
+    db.session.commit()
+    
+    return jsonify({
+        'id': team.id,
+        'name': team.name,
+        'message': 'Team created successfully'
+    }), 201
+
+@main_bp.route('/api/team/<int:team_id>', methods=['GET'])
+@login_required
+def get_team(team_id):
+    """Get details for a specific team"""
+    team = Team.query.get_or_404(team_id)
+    
+    # Check if user has access to the team's tournament
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    result = {
+        'id': team.id,
+        'name': team.name,
+        'created_year': team.created_year,
+        'logo_shape_type': team.logo_shape_type,
+        'primary_color': team.primary_color,
+        'secondary_color': team.secondary_color,
+        'wins': team.wins,
+        'losses': team.losses,
+        'points': team.points,
+        'tournament_id': team.tournament_id
+    }
+    
+    return jsonify(result)
+
+@main_bp.route('/api/team/<int:team_id>', methods=['PUT'])
+@login_required
+def update_team(team_id):
+    """Update team details"""
+    team = Team.query.get_or_404(team_id)
+    
+    # Check if user has access to the team's tournament
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    if 'name' in data and not data['name']:
+        return jsonify({'error': 'Team name is required'}), 400
+    
+    # Update fields
+    if 'name' in data:
+        team.name = data['name']
+    if 'created_year' in data:
+        team.created_year = data['created_year']
+    if 'logo_shape_type' in data:
+        team.logo_shape_type = data['logo_shape_type']
+    if 'primary_color' in data:
+        team.primary_color = data['primary_color']
+    if 'secondary_color' in data:
+        team.secondary_color = data['secondary_color']
+    if 'wins' in data:
+        team.wins = data['wins']
+    if 'losses' in data:
+        team.losses = data['losses']
+    if 'points' in data:
+        team.points = data['points']
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Team updated successfully'})
+
+@main_bp.route('/api/team/<int:team_id>', methods=['DELETE'])
+@login_required
+def delete_team(team_id):
+    """Delete a team and all associated data"""
+    team = Team.query.get_or_404(team_id)
+    
+    # Check if user has access to the team's tournament
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        db.session.begin_nested()
+        
+        # 1. Get all players for this team
+        players = Player.query.filter_by(team_id=team_id).all()
+        player_ids = [player.id for player in players]
+        
+        # 2. Delete player stats for players on this team
+        if player_ids:
+            PlayerStats.query.filter(PlayerStats.player_id.in_(player_ids)).delete(synchronize_session=False)
+        
+        # 3. Delete players
+        Player.query.filter_by(team_id=team_id).delete(synchronize_session=False)
+        
+        # 4. Get all matches involving this team
+        team_matches = Match.query.filter(
+            db.or_(
+                Match.team1_id == team_id,
+                Match.team2_id == team_id
+            )
+        ).all()
+        match_ids = [match.id for match in team_matches]
+        
+        # 5. Delete match scores for matches involving this team
+        if match_ids:
+            MatchScore.query.filter(MatchScore.match_id.in_(match_ids)).delete(synchronize_session=False)
+        
+        # 6. Delete player stats for matches involving this team
+        if match_ids:
+            PlayerStats.query.filter(PlayerStats.match_id.in_(match_ids)).delete(synchronize_session=False)
+        
+        # 7. Delete matches
+        for match_id in match_ids:
+            Match.query.filter_by(id=match_id).delete(synchronize_session=False)
+        
+        # 8. Delete the team
+        db.session.delete(team)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Team deleted successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in delete_team: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Player Management Endpoints
+@main_bp.route('/api/team/<int:team_id>/players', methods=['GET'])
+@login_required
+def get_players_for_team(team_id):
+    """Get all players for a team"""
+    team = Team.query.get_or_404(team_id)
+    
+    # Check if user has access to the team's tournament
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    players = Player.query.filter_by(team_id=team_id).all()
+    
+    result = []
+    for player in players:
+        result.append({
+            'id': player.id,
+            'name': player.name,
+            'height': player.height,
+            'weight': player.weight,
+            'position': player.position,
+            'jersey_number': player.jersey_number,
+            'team_id': player.team_id,
+            'team_name': team.name
+        })
+    
+    return jsonify(result)
+
+@main_bp.route('/api/tournament/<int:tournament_id>/players', methods=['GET'])
+@login_required
+def get_players_for_tournament(tournament_id):
+    """Get all players in a tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get all team IDs for this tournament
+    team_ids = [team.id for team in Team.query.filter_by(tournament_id=tournament_id).all()]
+    
+    if not team_ids:
+        return jsonify([])
+    
+    # Get all players for these teams
+    players = Player.query.filter(Player.team_id.in_(team_ids)).all()
+    
+    # Create a mapping of team_id to team_name for efficient lookup
+    teams = {team.id: team.name for team in Team.query.filter_by(tournament_id=tournament_id).all()}
+    
+    result = []
+    for player in players:
+        result.append({
+            'id': player.id,
+            'name': player.name,
+            'height': player.height,
+            'weight': player.weight,
+            'position': player.position,
+            'jersey_number': player.jersey_number,
+            'team_id': player.team_id,
+            'team_name': teams.get(player.team_id, 'Unknown')
+        })
+    
+    return jsonify(result)
+
+@main_bp.route('/api/team/<int:team_id>/players', methods=['POST'])
+@login_required
+def create_player(team_id):
+    """Create a new player for a team"""
+    team = Team.query.get_or_404(team_id)
+    
+    # Check if user has access to the team's tournament
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    for field in ['name', 'position', 'jersey_number']:
+        if not data.get(field):
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    player = Player(
+        name=data.get('name'),
+        height=data.get('height'),
+        weight=data.get('weight'),
+        position=data.get('position'),
+        jersey_number=data.get('jersey_number'),
+        team_id=team_id,
+        creator_id=current_user.id
+    )
+    
+    db.session.add(player)
+    db.session.commit()
+    
+    return jsonify({
+        'id': player.id,
+        'name': player.name,
+        'message': 'Player created successfully'
+    }), 201
+
+@main_bp.route('/api/player/<int:player_id>', methods=['GET'])
+@login_required
+def get_player(player_id):
+    """Get details for a specific player"""
+    player = Player.query.get_or_404(player_id)
+    
+    # Check if user has access to the player's team's tournament
+    team = Team.query.get_or_404(player.team_id)
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    result = {
+        'id': player.id,
+        'name': player.name,
+        'height': player.height,
+        'weight': player.weight,
+        'position': player.position,
+        'jersey_number': player.jersey_number,
+        'team_id': player.team_id,
+        'team_name': team.name
+    }
+    
+    return jsonify(result)
+
+@main_bp.route('/api/player/<int:player_id>', methods=['PUT'])
+@login_required
+def update_player(player_id):
+    """Update player details"""
+    player = Player.query.get_or_404(player_id)
+    
+    # Check if user has access to the player's team's tournament
+    team = Team.query.get_or_404(player.team_id)
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    if 'name' in data and not data['name']:
+        return jsonify({'error': 'Player name is required'}), 400
+    if 'position' in data and not data['position']:
+        return jsonify({'error': 'Position is required'}), 400
+    if 'jersey_number' in data and not data['jersey_number']:
+        return jsonify({'error': 'Jersey number is required'}), 400
+    
+    # If changing teams, ensure the new team is in the same tournament
+    if 'team_id' in data:
+        new_team = Team.query.get_or_404(data['team_id'])
+        if new_team.tournament_id != tournament.id:
+            return jsonify({'error': 'Cannot move player to a team in a different tournament'}), 400
+    
+    # Update fields
+    if 'name' in data:
+        player.name = data['name']
+    if 'height' in data:
+        player.height = data['height']
+    if 'weight' in data:
+        player.weight = data['weight']
+    if 'position' in data:
+        player.position = data['position']
+    if 'jersey_number' in data:
+        player.jersey_number = data['jersey_number']
+    if 'team_id' in data:
+        player.team_id = data['team_id']
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Player updated successfully'})
+
+@main_bp.route('/api/player/<int:player_id>', methods=['DELETE'])
+@login_required
+def delete_player(player_id):
+    """Delete a player and all associated data"""
+    player = Player.query.get_or_404(player_id)
+    
+    # Check if user has access to the player's team's tournament
+    team = Team.query.get_or_404(player.team_id)
+    tournament = Tournament.query.get_or_404(team.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        db.session.begin_nested()
+        
+        # 1. Delete player stats
+        PlayerStats.query.filter_by(player_id=player_id).delete(synchronize_session=False)
+        
+        # 2. Delete the player
+        db.session.delete(player)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Player deleted successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in delete_player: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Match Management Endpoints
+@main_bp.route('/api/tournament/<int:tournament_id>/matches', methods=['GET'])
+@login_required
+def get_matches_for_tournament(tournament_id):
+    """Get all matches for a tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    matches = Match.query.filter_by(tournament_id=tournament_id).order_by(Match.match_date).all()
+    
+    # Create mappings for team lookups
+    team_map = {team.id: team.name for team in Team.query.filter_by(tournament_id=tournament_id).all()}
+    
+    # Create mapping for match scores
+    match_ids = [match.id for match in matches]
+    scores = MatchScore.query.filter(MatchScore.match_id.in_(match_ids)).all()
+    score_map = {score.match_id: score for score in scores}
+    
+    result = []
+    for match in matches:
+        score = score_map.get(match.id)
+        
+        match_data = {
+            'id': match.id,
+            'team1_id': match.team1_id,
+            'team1_name': team_map.get(match.team1_id, 'Unknown'),
+            'team2_id': match.team2_id,
+            'team2_name': team_map.get(match.team2_id, 'Unknown'),
+            'venue_name': match.venue_name,
+            'match_date': match.match_date.isoformat(),
+            'has_score': score is not None
+        }
+        
+        if score:
+            match_data.update({
+                'team1_score': score.team1_score,
+                'team2_score': score.team2_score
+            })
+        
+        result.append(match_data)
+    
+    return jsonify(result)
+
+@main_bp.route('/api/tournament/<int:tournament_id>/matches', methods=['POST'])
+@login_required
+def create_match(tournament_id):
+    """Create a new match in a tournament"""
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    for field in ['team1_id', 'team2_id', 'match_date']:
+        if not data.get(field):
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    # Validate teams are in this tournament
+    team1 = Team.query.get_or_404(data['team1_id'])
+    team2 = Team.query.get_or_404(data['team2_id'])
+    
+    if team1.tournament_id != tournament_id or team2.tournament_id != tournament_id:
+        return jsonify({'error': 'Teams must belong to this tournament'}), 400
+    
+    if team1.id == team2.id:
+        return jsonify({'error': 'Team cannot play against itself'}), 400
+    
+    # Parse match date
+    try:
+        match_date = datetime.fromisoformat(data['match_date'])
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
+    
+    # Create match
+    match = Match(
+        tournament_id=tournament_id,
+        team1_id=data['team1_id'],
+        team2_id=data['team2_id'],
+        venue_name=data.get('venue_name'),
+        match_date=match_date,
+        creator_id=current_user.id
+    )
+    
+    db.session.add(match)
+    db.session.flush()  # To get match id for score creation
+    
+    # Create score if provided
+    if 'team1_score' in data and 'team2_score' in data:
+        score = MatchScore(
+            match_id=match.id,
+            team1_score=data['team1_score'],
+            team2_score=data['team2_score']
+        )
+        db.session.add(score)
+        
+        # Update team statistics (wins, losses, points)
+        update_team_statistics(tournament_id)
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': match.id,
+        'message': 'Match created successfully'
+    }), 201
+
+@main_bp.route('/api/match/<int:match_id>', methods=['GET'])
+@login_required
+def get_match(match_id):
+    """Get details for a specific match"""
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get score if available
+    score = MatchScore.query.filter_by(match_id=match_id).first()
+    
+    # Get team names
+    team1 = Team.query.get_or_404(match.team1_id)
+    team2 = Team.query.get_or_404(match.team2_id)
+    
+    result = {
+        'id': match.id,
+        'tournament_id': match.tournament_id,
+        'team1_id': match.team1_id,
+        'team1_name': team1.name,
+        'team2_id': match.team2_id,
+        'team2_name': team2.name,
+        'venue_name': match.venue_name,
+        'match_date': match.match_date.isoformat(),
+        'has_score': score is not None
+    }
+    
+    if score:
+        result.update({
+            'team1_score': score.team1_score,
+            'team2_score': score.team2_score
+        })
+    
+    return jsonify(result)
+
+@main_bp.route('/api/match/<int:match_id>', methods=['PUT'])
+@login_required
+def update_match(match_id):
+    """Update match details"""
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate teams if changing
+    if 'team1_id' in data or 'team2_id' in data:
+        team1_id = data.get('team1_id', match.team1_id)
+        team2_id = data.get('team2_id', match.team2_id)
+        
+        # Validate teams exist and are in this tournament
+        team1 = Team.query.get_or_404(team1_id)
+        team2 = Team.query.get_or_404(team2_id)
+        
+        if team1.tournament_id != tournament.id or team2.tournament_id != tournament.id:
+            return jsonify({'error': 'Teams must belong to this tournament'}), 400
+        
+        if team1_id == team2_id:
+            return jsonify({'error': 'Team cannot play against itself'}), 400
+        
+        match.team1_id = team1_id
+        match.team2_id = team2_id
+    
+    # Update match date if provided
+    if 'match_date' in data:
+        try:
+            match_date = datetime.fromisoformat(data['match_date'])
+            match.match_date = match_date
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
+    
+    # Update venue if provided
+    if 'venue_name' in data:
+        match.venue_name = data['venue_name']
+    
+    # Handle score update
+    has_score = 'team1_score' in data and 'team2_score' in data
+    score = MatchScore.query.filter_by(match_id=match_id).first()
+    
+    if has_score:
+        # Create or update score
+        if score:
+            score.team1_score = data['team1_score']
+            score.team2_score = data['team2_score']
+        else:
+            score = MatchScore(
+                match_id=match_id,
+                team1_score=data['team1_score'],
+                team2_score=data['team2_score']
+            )
+            db.session.add(score)
+    elif 'remove_score' in data and data['remove_score'] and score:
+        # Remove score if requested
+        db.session.delete(score)
+    
+    db.session.commit()
+    
+    # Update team statistics if scores were changed
+    if has_score or ('remove_score' in data and data['remove_score']):
+        update_team_statistics(tournament.id)
+    
+    return jsonify({'message': 'Match updated successfully'})
+
+@main_bp.route('/api/match/<int:match_id>', methods=['DELETE'])
+@login_required
+def delete_match(match_id):
+    """Delete a match and all associated data"""
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        db.session.begin_nested()
+        
+        # 1. Delete player stats for this match
+        PlayerStats.query.filter_by(match_id=match_id).delete(synchronize_session=False)
+        
+        # 2. Delete match score
+        MatchScore.query.filter_by(match_id=match_id).delete(synchronize_session=False)
+        
+        # 3. Delete the match
+        db.session.delete(match)
+        
+        db.session.commit()
+        
+        # Update team statistics
+        update_team_statistics(tournament.id)
+        
+        return jsonify({'message': 'Match deleted successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error in delete_match: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Player Statistics Endpoints
+@main_bp.route('/api/match/<int:match_id>/stats', methods=['GET'])
+@login_required
+def get_stats_for_match(match_id):
+    """Get all player statistics for a match"""
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get all stats for this match
+    stats = PlayerStats.query.filter_by(match_id=match_id).all()
+    
+    # Get player ids to fetch player and team info
+    player_ids = [stat.player_id for stat in stats]
+    players = Player.query.filter(Player.id.in_(player_ids)).all() if player_ids else []
+    
+    # Create mappings for efficient lookup
+    player_map = {player.id: player for player in players}
+    team_ids = [player.team_id for player in players]
+    team_map = {team.id: team.name for team in Team.query.filter(Team.id.in_(team_ids)).all()} if team_ids else {}
+    
+    result = []
+    for stat in stats:
+        player = player_map.get(stat.player_id)
+        if not player:
+            continue
+        
+        stat_data = {
+            'id': stat.id,
+            'match_id': stat.match_id,
+            'player_id': stat.player_id,
+            'player_name': player.name,
+            'team_id': player.team_id,
+            'team_name': team_map.get(player.team_id, 'Unknown'),
+            'points': stat.points,
+            'rebounds': stat.rebounds,
+            'assists': stat.assists,
+            'steals': stat.steals,
+            'blocks': stat.blocks,
+            'turnovers': stat.turnovers,
+            'three_pointers': stat.three_pointers,
+            'efficiency': stat.efficiency,
+            'double_double': stat.double_double,
+            'triple_double': stat.triple_double
+        }
+        
+        result.append(stat_data)
+    
+    return jsonify(result)
+
+@main_bp.route('/api/match/<int:match_id>/stats', methods=['POST'])
+@login_required
+def create_player_stat(match_id):
+    """Create or update player statistics for a match"""
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    data = request.json
+    
+    # Validate required fields
+    for field in ['player_id', 'points', 'rebounds', 'assists']:
+        if field not in data:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    # Check if player exists and is associated with teams in this match
+    player = Player.query.get_or_404(data['player_id'])
+    
+    # Check if player's team is playing in this match
+    if player.team_id != match.team1_id and player.team_id != match.team2_id:
+        return jsonify({'error': 'Player must belong to a team in this match'}), 400
+    
+    # Check if stats already exist for this player and match
+    existing_stat = PlayerStats.query.filter_by(
+        match_id=match_id,
+        player_id=data['player_id']
+    ).first()
+    
+    if existing_stat:
+        # Update existing stats
+        existing_stat.points = data['points']
+        existing_stat.rebounds = data['rebounds']
+        existing_stat.assists = data['assists']
+        existing_stat.steals = data.get('steals', 0)
+        existing_stat.blocks = data.get('blocks', 0)
+        existing_stat.turnovers = data.get('turnovers', 0)
+        existing_stat.three_pointers = data.get('three_pointers', 0)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': existing_stat.id,
+            'message': 'Player statistics updated successfully'
+        })
+    else:
+        # Create new stats
+        stat = PlayerStats(
+            match_id=match_id,
+            player_id=data['player_id'],
+            points=data['points'],
+            rebounds=data['rebounds'],
+            assists=data['assists'],
+            steals=data.get('steals', 0),
+            blocks=data.get('blocks', 0),
+            turnovers=data.get('turnovers', 0),
+            three_pointers=data.get('three_pointers', 0)
+        )
+        
+        db.session.add(stat)
+        db.session.commit()
+        
+        return jsonify({
+            'id': stat.id,
+            'message': 'Player statistics created successfully'
+        }), 201
+
+@main_bp.route('/api/player/<int:player_id>/stats/<int:match_id>', methods=['PUT'])
+@login_required
+def update_player_stats(player_id, match_id):
+    """Update a player's statistics for a specific match"""
+    player = Player.query.get_or_404(player_id)
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get player stats
+    stats = PlayerStats.query.filter_by(
+        match_id=match_id,
+        player_id=player_id
+    ).first()
+    
+    if not stats:
+        return jsonify({'error': 'Statistics not found for this player and match'}), 404
+    
+    data = request.json
+    
+    # Update stats fields
+    if 'points' in data:
+        stats.points = data['points']
+    if 'rebounds' in data:
+        stats.rebounds = data['rebounds']
+    if 'assists' in data:
+        stats.assists = data['assists']
+    if 'steals' in data:
+        stats.steals = data['steals']
+    if 'blocks' in data:
+        stats.blocks = data['blocks']
+    if 'turnovers' in data:
+        stats.turnovers = data['turnovers']
+    if 'three_pointers' in data:
+        stats.three_pointers = data['three_pointers']
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Player statistics updated successfully'})
+
+@main_bp.route('/api/player/<int:player_id>/stats/<int:match_id>', methods=['DELETE'])
+@login_required
+def delete_player_stats(player_id, match_id):
+    """Delete a player's statistics for a specific match"""
+    player = Player.query.get_or_404(player_id)
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if user has access to the match's tournament
+    tournament = Tournament.query.get_or_404(match.tournament_id)
+    if tournament.creator_id != current_user.id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Get player stats
+    stats = PlayerStats.query.filter_by(
+        match_id=match_id,
+        player_id=player_id
+    ).first()
+    
+    if not stats:
+        return jsonify({'error': 'Statistics not found for this player and match'}), 404
+    
+    db.session.delete(stats)
+    db.session.commit()
+    
+    return jsonify({'message': 'Player statistics deleted successfully'})
+
+
+
+
+@main_bp.route('/api/users', methods=['GET'])
+@login_required
+def search_users():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify([])
+
+    # Search by username or email, case-insensitive
+    users = User.query.filter(
+        (User.username.ilike(f'%{q}%')) |
+        (User.email.ilike(f'%{q}%'))
+    ).filter(User.id != current_user.id).limit(10).all()
+
+    return jsonify([
+        {'id': u.id, 'username': u.username, 'email': u.email}
+        for u in users
+    ])
+
+
+
+@main_bp.route('/api/tournament/<int:tid>/access_list')
+@login_required
+def access_list(tid):
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    return jsonify([
+        {
+            'user_id': a.user.id,
+            'email': a.user.email,
+            'access_granted': a.access_granted.strftime('%Y-%m-%d'),
+            'id': a.id
+        }
+        for a in tournament.tournament_access
+    ])
+
+@main_bp.route('/api/tournament/<int:tid>/access', methods=['POST'])
+
+@login_required
+def grant_access(tid):
+    user_id = request.json.get('user_id')
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    if TournamentAccess.query.filter_by(tournament_id=tid, user_id=user_id).first():
+        return jsonify({'error': 'Already shared'}), 400
+    access = TournamentAccess(tournament_id=tid, user_id=user_id)
+    db.session.add(access)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@main_bp.route('/api/tournament/<int:tid>/access/<int:uid>', methods=['DELETE'])
+
+@login_required
+def revoke_access(tid, uid):
+    tournament = Tournament.query.filter_by(id=tid, creator_id=current_user.id).first_or_404()
+    access = TournamentAccess.query.filter_by(tournament_id=tid, user_id=uid).first()
+
+    if not access:
+        return jsonify({'error': 'Access entry not found'}), 400
+
+    db.session.delete(access)
+    db.session.commit()
+    return jsonify({'success': True})
+
