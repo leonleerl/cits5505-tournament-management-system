@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import re
-from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, ChatMessage, TournamentAccess, db
+from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, TournamentAccess, db
 from app.forms.forms import (TournamentUploadForm, TournamentDetailsForm, TeamForm, PlayerForm, MatchForm, DeleteConfirmForm)
 
 # Create blueprint
