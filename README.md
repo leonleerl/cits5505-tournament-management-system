@@ -1,33 +1,5 @@
 # 🏀 Fantasy Basketball
 
-This project is a Flask implementation of the Basketball Tournament Management System, with Jinja2 templates and SQLAlchemy for database access.
-
-## Project Structure
-
-```
-app/
-├── models/             # Database models
-│   ├── database.py     # SQLAlchemy setup
-│   └── models.py       # ORM models for Users, Teams, Matches, etc.
-├── routes/             # Route definitions
-│   ├── auth_routes.py  # Authentication routes (login/signup/logout)
-│   └── main_routes.py  # Main app routes
-├── static/             # CSS, JS, images
-│   ├── css/
-│   └── js/
-├── templates/          # Jinja2 HTML templates
-│   ├── index.html
-│   ├── login.html
-│   ├── signup.html
-│   └── ...
-├── forms/              # WTForms for all user inputs
-app.py                  # Entry point
-requirements.txt        # Dependencies
-config.py               # Configurations
-tests/                  # Unit + Selenium tests
-```
-
-
 ## 📘 Table of Contents
 
 - [Introduction](#-introduction)
@@ -39,10 +11,13 @@ tests/                  # Unit + Selenium tests
 - [Data Management](#-data-management)
 - [Testing and Quality Assurance](#-testing-and-quality-assurance)
 - [Security](#-security)
+- [Project Structure](project-structure)
 - [Setup Instruction](#setup-instructions)
+
+
 ## 🎯 Introduction
 
-**Fantasy Basketball** is a modern, interactive platform that allows users to manage basketball tournaments, visualize statistics, and share data securely. Designed for coaches, players, and fans alike, it offers a full suite of features from uploads to insights.
+**Fantasy Basketball** is a web-based platform designed to simplify basketball tournament management for coaches, players, and fans. It allows users to upload tournament data via Excel files, manage teams and matches, visualize performance statistics, and securely share access with others. Built using Flask and SQLAlchemy, the app provides an intuitive interface and powerful analytics for both casual and competitive leagues.
 
 ## 🚀 Features
 
@@ -123,6 +98,30 @@ tests/                  # Unit + Selenium tests
 - Flask-Login manages session-based authentication
 - Role-limited access (only tournament owners can share)
 
+## Project Structure
+
+```
+app/
+├── models/             # Database models
+│   ├── database.py     # SQLAlchemy setup
+│   └── models.py       # ORM models for Users, Teams, Matches, etc.
+├── routes/             # Route definitions
+│   ├── auth_routes.py  # Authentication routes (login/signup/logout)
+│   └── main_routes.py  # Main app routes
+├── static/             # CSS, JS, images
+│   ├── css/
+│   └── js/
+├── templates/          # Jinja2 HTML templates
+│   ├── index.html
+│   ├── login.html
+│   ├── signup.html
+│   └── ...
+├── forms/              # WTForms for all user inputs
+app.py                  # Entry point
+requirements.txt        # Dependencies
+config.py               # Configurations
+tests/                  # Unit + Selenium tests
+```
 
 ## Setup Instructions
 
