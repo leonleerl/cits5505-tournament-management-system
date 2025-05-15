@@ -510,6 +510,7 @@ def privacy():
 
 
 @main_bp.route('/visualise')
+@login_required
 def visualise():
     """Route for data visualization page"""
     # Get tournaments that the current user has access to
