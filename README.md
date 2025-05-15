@@ -114,7 +114,7 @@ app/
 │   ├── signup.html
 │   └── ...
 ├── forms/              # WTForms for all user inputs
-├── db/                 # Database
+├── db/cits5505.db      # Database
 app.py                  # Entry point
 requirements.txt        # Dependencies
 config.py               # Configurations
