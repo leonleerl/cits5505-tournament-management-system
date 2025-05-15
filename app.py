@@ -58,7 +58,9 @@ def create_app(config_name='default'):
     print("Initializing extensions...")
     db.init_app(app)
     csrf.init_app(app)
-    
+    from app.routes.main_routes import revoke_access, grant_access
+    csrf.exempt(revoke_access)
+    csrf.exempt(grant_access)
     # Register blueprints
     print("Importing blueprints...")
     app.register_blueprint(main_bp)
