@@ -17,7 +17,7 @@ class User(db.Model, UserMixin):
     teams = db.relationship('Team', backref='creator', lazy=True)
     players = db.relationship('Player', backref='creator', lazy=True)
     matches = db.relationship('Match', backref='creator', lazy=True)
-    tournament_access = db.relationship('TournamentAccess', backref='user', lazy=True)  # Added relationship
+    tournament_access = db.relationship('TournamentAccess', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

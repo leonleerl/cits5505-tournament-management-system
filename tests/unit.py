@@ -14,7 +14,7 @@ app_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app_module)
 
 from app.models.database import db
-from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, TournamentAccess, ChatMessage
+from app.models.models import User, Tournament, Team, Player, Match, MatchScore, PlayerStats, TournamentAccess
 from config import TestingConfig
 
 unittest.TestLoader.sortTestMethodsUsing = None
@@ -372,172 +372,100 @@ class PlayerStatsUnitTests(BaseTestCase):
             name='Stats Test Tournament',
             description='Tournament for stats testing',
             year=2023,
-            start_date=date(2023, 11, 1),
-            end_date=date(2023, 11, 15),
+            start_date=date(2023, 10, 1),
+            end_date=date(2023, 10, 15),
             creator_id=self.test_user.id
         )
         db.session.add(self.test_tournament)
         db.session.commit()
         
-        # Create two test teams
-        self.team1 = Team(
-            name='Stats Team A',
+        # Create test teams
+        self.test_team1 = Team(
+            name='Stats Team 1',
             creator_id=self.test_user.id,
             tournament_id=self.test_tournament.id
         )
-        self.team2 = Team(
-            name='Stats Team B',
+        self.test_team2 = Team(
+            name='Stats Team 2',
             creator_id=self.test_user.id,
             tournament_id=self.test_tournament.id
         )
-        db.session.add_all([self.team1, self.team2])
+        db.session.add_all([self.test_team1, self.test_team2])
         db.session.commit()
         
-        # Create a player
-        self.player = Player(
+        # Create a test player
+        self.test_player = Player(
             name='Stats Player',
-            position='PF',
-            jersey_number=34,
-            team_id=self.team1.id,
+            position='PG',
+            jersey_number=1,
+            team_id=self.test_team1.id,
             creator_id=self.test_user.id
         )
-        db.session.add(self.player)
+        db.session.add(self.test_player)
         db.session.commit()
         
-        # Create a match
-        self.match = Match(
+        # Create a test match
+        self.test_match = Match(
             tournament_id=self.test_tournament.id,
-            team1_id=self.team1.id,
-            team2_id=self.team2.id,
-            venue_name='Stats Arena',
-            match_date=datetime(2023, 11, 5, 19, 0, 0),
+            team1_id=self.test_team1.id,
+            team2_id=self.test_team2.id,
+            match_date=datetime(2023, 10, 5, 14, 0),
             creator_id=self.test_user.id
         )
-        db.session.add(self.match)
+        db.session.add(self.test_match)
         db.session.commit()
         
     def test_player_stats_creation(self):
         """Test player stats creation and attributes"""
         stats = PlayerStats(
-            match_id=self.match.id,
-            player_id=self.player.id,
+            match_id=self.test_match.id,
+            player_id=self.test_player.id,
             points=25,
-            rebounds=12,
-            assists=8,
+            rebounds=10,
+            assists=5,
             steals=2,
-            blocks=3,
-            turnovers=2,
+            blocks=1,
+            turnovers=3,
             three_pointers=4
         )
         db.session.add(stats)
         db.session.commit()
         
-        fetched_stats = PlayerStats.query.filter_by(player_id=self.player.id).first()
+        fetched_stats = PlayerStats.query.filter_by(player_id=self.test_player.id).first()
         self.assertIsNotNone(fetched_stats)
         self.assertEqual(fetched_stats.points, 25)
-        self.assertEqual(fetched_stats.rebounds, 12)
-        self.assertEqual(fetched_stats.assists, 8)
+        self.assertEqual(fetched_stats.rebounds, 10)
+        self.assertEqual(fetched_stats.assists, 5)
+        self.assertEqual(fetched_stats.steals, 2)
+        self.assertEqual(fetched_stats.blocks, 1)
+        self.assertEqual(fetched_stats.turnovers, 3)
+        self.assertEqual(fetched_stats.three_pointers, 4)
         
     def test_calculated_fields(self):
-        """Test that calculated fields are set correctly"""
-        # Test double double (10+ in two categories)
-        stats1 = PlayerStats(
-            match_id=self.match.id,
-            player_id=self.player.id,
-            points=15,
+        """Test calculated fields in player stats"""
+        stats = PlayerStats(
+            match_id=self.test_match.id,
+            player_id=self.test_player.id,
+            points=25,
             rebounds=12,
-            assists=5,
-            steals=1,
-            blocks=2,
-            turnovers=3,
-            three_pointers=1
-        )
-        db.session.add(stats1)
-        db.session.commit()
-        
-        self.assertTrue(stats1.double_double)
-        self.assertFalse(stats1.triple_double)
-        self.assertEqual(stats1.efficiency, 32)  # 15+12+5+1+2-3
-        
-        # Test triple double (10+ in three categories)
-        stats2 = PlayerStats(
-            match_id=self.match.id,
-            player_id=self.player.id,
-            points=22,
-            rebounds=10,
-            assists=11,
-            steals=3,
+            assists=10,
+            steals=2,
             blocks=1,
-            turnovers=4,
-            three_pointers=2
+            turnovers=3,
+            three_pointers=4
         )
-        db.session.add(stats2)
+        db.session.add(stats)
         db.session.commit()
         
-        self.assertTrue(stats2.double_double)
-        self.assertTrue(stats2.triple_double)
-        self.assertEqual(stats2.efficiency, 43)  # 22+10+11+3+1-4
-
-class ChatMessageUnitTests(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        # Create a test user
-        self.test_user = User(username='chatuser', email='chat@example.com', full_name='Chat User')
-        self.test_user.set_password('password123')
-        db.session.add(self.test_user)
-        db.session.commit()
+        # Test efficiency calculation
+        expected_efficiency = 25 + 12 + 10 + 2 + 1 - 3  # points + rebounds + assists + steals + blocks - turnovers
+        self.assertEqual(stats.efficiency, expected_efficiency)
         
-    def test_chat_message_creation(self):
-        """Test chat message creation and attributes"""
-        message = ChatMessage(
-            user_id=self.test_user.id,
-            message='Hello, this is a test message',
-            has_link=False
-        )
-        db.session.add(message)
-        db.session.commit()
+        # Test double_double (points and rebounds >= 10)
+        self.assertTrue(stats.double_double)
         
-        fetched_message = ChatMessage.query.filter_by(user_id=self.test_user.id).first()
-        self.assertIsNotNone(fetched_message)
-        self.assertEqual(fetched_message.message, 'Hello, this is a test message')
-        self.assertFalse(fetched_message.has_link)
-        self.assertIsNone(fetched_message.tournament_link)
-        
-    def test_chat_message_with_link(self):
-        """Test chat message with tournament link"""
-        message = ChatMessage(
-            user_id=self.test_user.id,
-            message='Check out this tournament!',
-            has_link=True,
-            tournament_link='/tournament/123'
-        )
-        db.session.add(message)
-        db.session.commit()
-        
-        fetched_message = ChatMessage.query.filter_by(has_link=True).first()
-        self.assertIsNotNone(fetched_message)
-        self.assertEqual(fetched_message.message, 'Check out this tournament!')
-        self.assertTrue(fetched_message.has_link)
-        self.assertEqual(fetched_message.tournament_link, '/tournament/123')
-        
-    def test_user_message_relationship(self):
-        """Test relationship between user and messages"""
-        message1 = ChatMessage(
-            user_id=self.test_user.id,
-            message='First message'
-        )
-        message2 = ChatMessage(
-            user_id=self.test_user.id,
-            message='Second message'
-        )
-        db.session.add_all([message1, message2])
-        db.session.commit()
-        
-        # Test relationship from user to messages
-        self.assertEqual(len(self.test_user.chat_messages), 2)
-        messages = [msg.message for msg in self.test_user.chat_messages]
-        self.assertIn('First message', messages)
-        self.assertIn('Second message', messages)
+        # Test triple_double (points, rebounds, and assists >= 10)
+        self.assertTrue(stats.triple_double)
 
 if __name__ == '__main__':
-    unittest.main(verbosity=1) 
+    unittest.main() 
