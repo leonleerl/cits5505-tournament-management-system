@@ -75,7 +75,17 @@
 
 ## 📊 Data Management
 
-- **ER Diagram**:
+#### Database Configuration
+
+- `SQLAlchemy ORM:` Integrated with Flask-SQLAlchemy for object-relational mapping
+- `Connection Management:` Connection pooling configured to optimize database resources
+- `Migration Support:` Flask-Migrate (Alembic) integrated for schema version control
+
+#### Data Models
+
+- Models defined in `models.py` with relationships and constraints
+- Each model includes proper validation rules
+- Database indexes created on frequently queried columns
 
 
 
@@ -119,6 +129,7 @@ app.py                  # Entry point
 requirements.txt        # Dependencies
 config.py               # Configurations
 tests/                  # Unit + Selenium tests
+migration/              # flask-db-migration
 ```
 
 ## 🚀 Setup Instructions
@@ -208,6 +219,76 @@ python -m tests.selenium
 This will  perform the actions defined in the `selenium.py`
 
 Test results will be displayed in the terminal window.
+
+# Flask Database Migrations
+
+## Overview
+
+This document outlines the database migration commands available in our Flask application. Database migrations allow you to make changes to your database schema over time while preserving existing data.
+
+## Migration Commands
+
+### Basic Commands
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `init` | Initialize the migrations directory structure | `python manage.py init` |
+| `migrate` | Generate a new migration script based on model changes | `python manage.py migrate` |
+| `upgrade` | Apply pending migrations to the database | `python manage.py upgrade` |
+| `downgrade` | Revert the most recent migration | `python manage.py downgrade` |
+| `all` | Run init, migrate, and upgrade in sequence | `python manage.py all` |
+
+### Information Commands
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `history` | Display migration version history | `python manage.py history` |
+| `current` | Show the current migration version | `python manage.py current` |
+
+### Advanced Usage
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `message` | Create migration with custom message | `python manage.py message "Add user table"` |
+
+## Workflow Examples
+
+### First-time Setup
+
+```bash
+# Initialize migration repository and create first migration
+python manage.py init
+python manage.py migrate
+python manage.py upgrade
+```
+
+### Making Schema Changes
+
+```bash
+# After modifying models.py:
+python manage.py migrate
+python manage.py upgrade
+```
+
+### Rolling Back Changes
+
+```bash
+# If you need to revert the last migration:
+python manage.py downgrade
+```
+
+## Implementation Details
+
+Our migration system uses a custom `manage.py` script that:
+
+1. Loads the Flask application using the factory pattern
+2. Initializes Flask-Migrate with our SQLAlchemy database
+3. Provides command-line interface for all migration operations
+
+
+## Environment Configuration
+
+The migration system uses the database URI configured in your Flask application. Make sure your database connection is properly configured in your environment via `FLASK_CONFIG` or it will default to the 'default' configuration.
 
 ### Deactivating the Virtual Environment
 
