@@ -91,7 +91,7 @@ def create_app(config_name='default'):
         from app.models.models import User
         return User.query.get(int(user_id))
     
-        # Create db directory if it doesn't exist
+    # Create db directory if it doesn't exist
     db_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db')
     if not os.path.exists(db_dir):
         print("Creating db directory...")
