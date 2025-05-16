@@ -16,19 +16,29 @@ from app.models.database import db
 app = create_app(os.environ.get('FLASK_CONFIG') or 'default')
  
 # Initialize migrations
-from flask_migrate import Migrate, init, migrate, upgrade
+from flask_migrate import Migrate, init, migrate, upgrade, downgrade, history, current
 migrate_obj = Migrate(app, db)
  
 def print_usage():
     print("\nUsage:")
-    print("  python db_migrate.py init          - Initialize migrations")
-    print("  python db_migrate.py migrate       - Create migration script")
-    print("  python db_migrate.py upgrade       - Apply migrations")
-    print("  python db_migrate.py all           - Do all three steps\n")
+    print("  python manage.py init          - Initialize migrations")
+    print("  python manage.py migrate       - Create migration script")
+    print("  python manage.py upgrade       - Apply migrations")
+    print("  python manage.py downgrade     - Revert to previous migration")
+    print("  python manage.py history       - Show migration history")
+    print("  python manage.py current       - Show current migration")
+    print("  python manage.py all           - Run init, migrate, and upgrade")
+    print("  python manage.py message \"Your message\" - Create migration with custom message\n")
  
 if __name__ == "__main__":
     command = sys.argv[1] if len(sys.argv) > 1 else "usage"
+    
+    # Get custom message if provided
     message = "Update database schema"
+    if command == "message" and len(sys.argv) > 2:
+        message = sys.argv[2]
+        command = "migrate"
+    
     with app.app_context():
         try:
             if command == "init":
@@ -36,13 +46,23 @@ if __name__ == "__main__":
                 init(directory="migrations")
                 print("✅ Migrations initialized!")
             elif command == "migrate":
-                print("Creating migration script...")
+                print(f"Creating migration script with message: '{message}'...")
                 migrate(directory="migrations", message=message)
                 print("✅ Migration script created!")
             elif command == "upgrade":
                 print("Applying migrations...")
                 upgrade(directory="migrations")
                 print("✅ Database upgraded!")
+            elif command == "downgrade":
+                print("Reverting to previous migration...")
+                downgrade(directory="migrations")
+                print("✅ Database downgraded!")
+            elif command == "history":
+                print("Migration history:")
+                history(directory="migrations")
+            elif command == "current":
+                print("Current migration:")
+                current(directory="migrations")
             elif command == "all":
                 print("Running all migration steps...")
                 init(directory="migrations")
