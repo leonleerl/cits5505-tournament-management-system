@@ -1,7 +1,7 @@
 import os
 import atexit
 import shutil
-from flask import Flask, g
+from flask import Flask
 from datetime import datetime
 from flask_wtf.csrf import CSRFProtect
 from app.models.database import db
@@ -9,6 +9,7 @@ from app.routes.main_routes import main_bp
 from app.routes.auth_routes import auth_bp
 from app.routes.main_routes import revoke_access, grant_access
 from flask_login import LoginManager
+from flask_migrate import Migrate
 import subprocess
 from config import config
 
@@ -60,6 +61,8 @@ def create_app(config_name='default'):
     db.init_app(app)
     csrf.init_app(app)
     
+    # Initialize Flask-Migrate
+    migrate = Migrate(app, db)
     csrf.exempt(revoke_access)
     csrf.exempt(grant_access)
     

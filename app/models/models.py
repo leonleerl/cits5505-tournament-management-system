@@ -17,8 +17,7 @@ class User(db.Model, UserMixin):
     teams = db.relationship('Team', backref='creator', lazy=True)
     players = db.relationship('Player', backref='creator', lazy=True)
     matches = db.relationship('Match', backref='creator', lazy=True)
-    chat_messages = db.relationship('ChatMessage', backref='user', lazy=True)
-    tournament_access = db.relationship('TournamentAccess', backref='user', lazy=True)  # Added relationship
+    tournament_access = db.relationship('TournamentAccess', backref='user', lazy=True)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -122,16 +121,6 @@ class PlayerStats(db.Model):
     efficiency = db.Column(db.Integer, default=0)
     double_double = db.Column(db.Boolean, default=False)
     triple_double = db.Column(db.Boolean, default=False)
-
-class ChatMessage(db.Model):
-    __tablename__ = 'chat_message'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    has_link = db.Column(db.Boolean, default=False)
-    tournament_link = db.Column(db.String(255), nullable=True)
 
 # Add event listeners for calculated fields
 @db.event.listens_for(PlayerStats, 'before_insert')
